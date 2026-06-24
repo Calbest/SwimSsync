@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- Swimmer head -->
+  <circle cx="38" cy="15" r="5" fill="#0077b6"/>
+  <!-- Swimmer torso / body stroke -->
+  <path d="M33 15 L10 20" stroke="#0077b6" stroke-width="4" stroke-linecap="round"/>
+  <!-- Forward arm reaching ahead -->
+  <path d="M33 12 L17 7" stroke="#0077b6" stroke-width="3" stroke-linecap="round"/>
+  <!-- Kick — upper leg -->
+  <path d="M10 20 L5 16" stroke="#0077b6" stroke-width="3" stroke-linecap="round"/>
+  <!-- Kick — lower leg -->
+  <path d="M10 20 L5 24" stroke="#0077b6" stroke-width="3" stroke-linecap="round"/>
+  <!-- Pool wave 1 -->
+  <path d="M4 32 Q9 28 14 32 Q19 36 24 32 Q29 28 34 32 Q39 36 44 32"
+        stroke="#0077b6" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Pool wave 2 -->
+  <path d="M4 40 Q9 36 14 40 Q19 44 24 40 Q29 36 34 40 Q39 44 44 40"
+        stroke="#00b4d8" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>

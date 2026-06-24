@@ -5,7 +5,10 @@ function App() {
     <div className="page">
       {/* ── Navbar ── */}
       <header className="navbar">
-        <span className="nav-logo">SwimSCPlan</span>
+        <div className="nav-brand">
+          <img src="/logo.svg" alt="SwimSCPlan logo" className="nav-logo-img" />
+          <span className="nav-logo">SwimSCPlan</span>
+        </div>
         <div className="nav-actions">
           <button className="btn-secondary">Sign In</button>
           <button className="btn-primary">Create Account</button>
@@ -53,12 +56,14 @@ function App() {
 
       {/* ── Call to Action ── */}
       <section className="cta">
+        <img src="/logo.svg" alt="" className="cta-logo" />
         <h2>Ready to get started?</h2>
         <p>Create a free account and take control of your training.</p>
         <button className="btn-primary btn-large">Create Account</button>
       </section>
 
       <footer className="footer">
+        <img src="/logo.svg" alt="" className="footer-logo" />
         <span>© 2026 SwimSCPlan</span>
       </footer>
     </div>
