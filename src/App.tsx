@@ -1,6 +1,8 @@
+import { useNavigate } from 'react-router-dom'
 import './App.css'
 
 function App() {
+  const navigate = useNavigate()
   return (
     <div className="page">
       {/* ── Navbar ── */}
@@ -11,7 +13,7 @@ function App() {
         </div>
         <div className="nav-actions">
           <button className="btn-secondary">Sign In</button>
-          <button className="btn-primary">Create Account</button>
+          <button className="btn-primary" onClick={() => navigate('/create-account')}>Create Account</button>
         </div>
       </header>
 
@@ -59,7 +61,7 @@ function App() {
         <img src="/logo.svg" alt="" className="cta-logo" />
         <h2>Ready to get started?</h2>
         <p>Create a free account and take control of your training.</p>
-        <button className="btn-primary btn-large">Create Account</button>
+        <button className="btn-primary btn-large" onClick={() => navigate('/create-account')}>Create Account</button>
       </section>
 
       <footer className="footer">
