@@ -143,9 +143,22 @@ export default function Import() {
     const { data } = await supabase.auth.getSession()
     const user = data.session?.user
     if (!user) { navigate('/'); return }
-    const merged = { ...(user.user_metadata?.times ?? {}) }
-    for (const row of toSave) merged[row.key] = row.time
-    await supabase.auth.updateUser({ data: { times: merged } })
+
+    const today = new Date().toISOString().slice(0, 10)
+    const mergedTimes: Record<string, string> = { ...(user.user_metadata?.times ?? {}) }
+    const mergedHistory: Record<string, { date: string; time: string }[]> =
+      { ...(user.user_metadata?.timeHistory ?? {}) }
+
+    for (const row of toSave) {
+      mergedTimes[row.key] = row.time
+      const existing = mergedHistory[row.key] ?? []
+      // Skip if this exact time was already recorded today
+      if (!existing.some(e => e.date === today && e.time === row.time)) {
+        mergedHistory[row.key] = [...existing, { date: today, time: row.time }]
+      }
+    }
+
+    await supabase.auth.updateUser({ data: { times: mergedTimes, timeHistory: mergedHistory } })
     setSaving(false)
     navigate('/dashboard')
   }
@@ -293,7 +306,8 @@ export default function Import() {
           <div>
             Found <strong>{parsed.length}</strong> unique event{parsed.length !== 1 ? 's' : ''}.
             Check the rows below, uncheck anything that looks wrong, then click Save.
-            Saving will <strong>overwrite</strong> your existing time for each checked event.
+            Saving will <strong>overwrite</strong> your existing time for each checked event
+            and <strong>add a dated entry</strong> to your Progress history automatically.
           </div>
         </div>
 
