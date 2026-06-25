@@ -430,45 +430,61 @@ export default function Dashboard() {
       {/* ── Main ── */}
       <main className="dash-main">
 
-        <div className="dash-main-header" style={
-          bannerType === 'canvas' && bannerValue
-            ? { backgroundImage: `url(${bannerValue})`, backgroundSize: 'cover', backgroundPosition: 'center top' }
-            : (bannerType === 'gradient' || bannerType === 'color') && bannerValue
-            ? { background: bannerValue }
-            : undefined
-        }>
-          {/* Top-right actions */}
-          <div className="dash-banner-actions">
-            <button
-              className="dash-bell-btn"
-              onClick={() => { setShowNotifs(s => !s); if (!showNotifs) markAllRead() }}
-              aria-label="Notifications"
-            >
-              <Bell size={18} />
-              {unreadCount > 0 && (
-                <span className="dash-bell-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
-              )}
-            </button>
-            <img src="/logos/scs.svg" alt="Southern California Swimming" className="scs-logo-corner" />
+        {/* ── Profile header (SwimCloud style) ── */}
+        <div className="dash-profile-header">
+
+          {/* Banner strip */}
+          <div className="dash-banner-strip" style={
+            bannerType === 'canvas' && bannerValue
+              ? { backgroundImage: `url(${bannerValue})`, backgroundSize: 'cover', backgroundPosition: 'center top' }
+              : (bannerType === 'gradient' || bannerType === 'color') && bannerValue
+              ? { background: bannerValue }
+              : undefined
+          }>
+            <div className="dash-banner-actions">
+              <button
+                className="dash-bell-btn"
+                onClick={() => { setShowNotifs(s => !s); if (!showNotifs) markAllRead() }}
+                aria-label="Notifications"
+              >
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span className="dash-bell-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                )}
+              </button>
+              <img src="/logos/scs.svg" alt="Southern California Swimming" className="scs-logo-corner" />
+            </div>
           </div>
 
-          {/* Profile row */}
-          <div className="dash-banner-profile">
+          {/* Profile bar */}
+          <div className="dash-profile-bar">
             <div className="dash-banner-avatar-wrap">
               {avatarUrl
                 ? <img src={avatarUrl} alt="avatar" className="dash-banner-avatar-img" />
-                : <User size={32} className="dash-banner-avatar-icon" />
+                : <span className="dash-banner-avatar-initials">
+                    {(fullName || username || 'S').charAt(0).toUpperCase()}
+                  </span>
               }
             </div>
-            <div className="dash-banner-info">
+            <div className="dash-profile-meta">
               <h1 className="dash-welcome">{fullName || username || '…'}</h1>
-              <div className="dash-banner-chips">
-                {age !== null && <span className="dash-chip">Age {age}</span>}
-                {gender && <span className="dash-chip">{gender === 'male' ? 'Male' : 'Female'}</span>}
-                <span className="dash-chip">{course}</span>
-                <span className="dash-chip dash-chip--dim">Southern California Swimming</span>
-              </div>
+              <p className="dash-profile-sub">
+                {[
+                  age !== null ? `Age ${age}` : null,
+                  gender ? (gender === 'male' ? 'Male' : 'Female') : null,
+                  course,
+                  'Southern California Swimming',
+                ].filter(Boolean).join(' · ')}
+              </p>
             </div>
+            <button
+              className="dash-profile-signout"
+              onClick={() => { playClick(); handleSignOut() }}
+              title="Sign out"
+            >
+              <LogOut size={15} />
+              <span>Sign out</span>
+            </button>
           </div>
         </div>
 

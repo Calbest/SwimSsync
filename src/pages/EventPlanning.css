@@ -22,7 +22,7 @@
 .ep-sidebar-brand {
   font-size: 13px;
   font-weight: 800;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.75);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-bottom: 20px;
@@ -574,7 +574,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-.ep-no-time { color: #94a3b8; font-weight: 400; }
+.ep-no-time { color: #64748b; font-weight: 400; }
 
 /* ── Proximity colors (match Compare/Quals) ── */
 .ep-prox--met       { background: #1d4ed8; color: #ffffff; }
@@ -582,8 +582,8 @@
 .ep-prox--near      { background: #d97706; color: #ffffff; }
 .ep-prox--far       { background: #ea580c; color: #ffffff; }
 .ep-prox--very-far  { background: #b91c1c; color: #ffffff; }
-.ep-prox--no-time   { color: #94a3b8; background: transparent; font-weight: 400; padding: 0; }
-.ep-prox--no-cut    { color: #94a3b8; background: transparent; font-weight: 400; padding: 0; }
+.ep-prox--no-time   { color: #64748b; background: transparent; font-weight: 400; padding: 0; }
+.ep-prox--no-cut    { color: #64748b; background: transparent; font-weight: 400; padding: 0; }
 
 /* ── Goal check badge ── */
 .ep-goal-check {
@@ -614,7 +614,7 @@
 .ep-rec--enter    { background: #1d4ed8; color: #ffffff; }
 .ep-rec--consider { background: #d97706; color: #ffffff; }
 .ep-rec--skip     { background: #e2e8f0; color: #64748b; }
-.ep-rec--notime   { background: #f1f5f9; color: #94a3b8; }
+.ep-rec--notime   { background: #f1f5f9; color: #475569; }
 
 /* ── Staleness icon ── */
 .ep-stale {
@@ -623,7 +623,7 @@
   cursor: help;
   flex-shrink: 0;
 }
-.ep-stale--unknown { color: #94a3b8; }
+.ep-stale--unknown { color: #64748b; }
 .ep-stale--aging   { color: #d97706; }
 .ep-stale--stale   { color: #ea580c; }
 

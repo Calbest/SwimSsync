@@ -21,7 +21,7 @@
 .quals-sidebar-brand {
   font-size: 13px;
   font-weight: 800;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.75);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-bottom: 20px;
@@ -285,8 +285,8 @@
 .quals-cell--near     { color: #ffffff; background: #d97706; border-color: #92400e; font-weight: 800; }
 .quals-cell--far      { color: #ffffff; background: #ea580c; border-color: #9a3412; font-weight: 800; }
 .quals-cell--very-far { color: #ffffff; background: #b91c1c; border-color: #7f1d1d; font-weight: 800; }
-.quals-cell--no-time  { color: #64748b; background: #f1f5f9; }
-.quals-cell--none     { color: #cbd5e1; }
+.quals-cell--no-time  { color: #475569; background: #f1f5f9; }
+.quals-cell--none     { color: #94a3b8; }
 
 @media (max-width: 700px) {
   .quals-sidebar { display: none; }

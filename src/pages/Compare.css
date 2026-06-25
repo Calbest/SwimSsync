@@ -22,7 +22,7 @@
 .compare-sidebar-brand {
   font-size: 13px;
   font-weight: 800;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.75);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-bottom: 20px;
@@ -367,8 +367,8 @@
 .compare-time--near     { background: #d97706; color: #ffffff; box-shadow: 0 0 0 2px #92400e; }
 .compare-time--far      { background: #ea580c; color: #ffffff; box-shadow: 0 0 0 2px #9a3412; }
 .compare-time--very-far { background: #b91c1c; color: #ffffff; box-shadow: 0 0 0 2px #7f1d1d; }
-.compare-time--no-time  { color: #94a3b8; background: transparent; padding: 0; font-weight: 500; box-shadow: none; }
-.compare-time--no-cut   { color: #94a3b8; background: transparent; padding: 0; font-weight: 500; box-shadow: none; }
+.compare-time--no-time  { color: #64748b; background: transparent; padding: 0; font-weight: 500; box-shadow: none; }
+.compare-time--no-cut   { color: #64748b; background: transparent; padding: 0; font-weight: 500; box-shadow: none; }
 
 .compare-tier-sym {
   font-size: 11px;
@@ -393,7 +393,7 @@
 .compare-status--far      { background: #ea580c; color: #ffffff; font-weight: 800; }
 .compare-status--very-far { background: #b91c1c; color: #ffffff; font-weight: 800; }
 .compare-status--no-time  { background: #e2e8f0; color: #64748b; font-weight: 600; }
-.compare-status--no-cut   { background: transparent; color: #94a3b8; }
+.compare-status--no-cut   { background: #f1f5f9; color: #64748b; font-weight: 600; }
 
 @media (max-width: 640px) {
   .compare-sidebar        { display: none; }

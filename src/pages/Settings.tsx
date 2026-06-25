@@ -10,7 +10,7 @@ type ResetStatus = 'idle' | 'loading' | 'success' | 'error'
 type BannerType  = 'default' | 'gradient' | 'color' | 'canvas'
 
 const GRADIENT_PRESETS = [
-  { label: 'Navy (Default)', value: 'linear-gradient(180deg, #001a3d 0%, #002855 100%)' },
+  { label: 'SwimSync (Default)', value: 'radial-gradient(ellipse at 10% 80%, rgba(99,102,241,0.7) 0%, transparent 45%), radial-gradient(ellipse at 55% 30%, rgba(14,165,233,0.65) 0%, transparent 50%), radial-gradient(ellipse at 95% 10%, rgba(6,182,212,0.8) 0%, transparent 45%), linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #0284c7 100%)' },
   { label: 'Ocean',          value: 'linear-gradient(135deg, #0369a1 0%, #001a3d 100%)' },
   { label: 'Sunset',         value: 'linear-gradient(135deg, #f97316 0%, #dc2626 55%, #9333ea 100%)' },
   { label: 'Forest',         value: 'linear-gradient(135deg, #166534 0%, #052e16 100%)' },

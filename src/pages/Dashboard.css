@@ -272,9 +272,9 @@ button:active { transform: scale(0.96) !important; }
   gap: 8px;
   background: none;
   border: none;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.75);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   padding: 10px 8px;
   border-radius: 8px;
@@ -293,64 +293,61 @@ button:active { transform: scale(0.96) !important; }
   max-width: 960px;
 }
 
-.dash-main-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+/* ── Profile header (SwimCloud style) ── */
+.dash-profile-header {
   margin-bottom: 28px;
-  padding: 20px 28px 24px;
   border-radius: 14px;
-  background: linear-gradient(160deg, #0b1f3a 0%, #002855 55%, #003d6e 100%);
-  border: 1px solid rgba(255,255,255,0.07);
-  box-shadow: 0 4px 20px rgba(0,20,60,0.2);
+  overflow: visible;
   position: relative;
-  overflow: hidden;
 }
 
-/* subtle diagonal stripe texture */
-.dash-main-header::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: repeating-linear-gradient(
-    -45deg,
-    rgba(255,255,255,0.012) 0px,
-    rgba(255,255,255,0.012) 1px,
-    transparent 1px,
-    transparent 20px
-  );
-  pointer-events: none;
+/* Banner strip — just the image/gradient, no text */
+.dash-banner-strip {
+  height: 148px;
+  border-radius: 14px 14px 0 0;
+  background:
+    radial-gradient(ellipse at 10% 80%, rgba(99,102,241,0.7) 0%, transparent 45%),
+    radial-gradient(ellipse at 55% 30%, rgba(14,165,233,0.65) 0%, transparent 50%),
+    radial-gradient(ellipse at 95% 10%, rgba(6,182,212,0.8) 0%, transparent 45%),
+    linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #0284c7 100%);
+  position: relative;
 }
 
-/* ── Actions row (top-right: bell + logo) ── */
+/* Actions: bell + logo anchored top-right inside banner */
 .dash-banner-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  align-self: flex-end;
   position: absolute;
-  top: 18px;
-  right: 24px;
-}
-
-/* ── Profile row ── */
-.dash-banner-profile {
+  top: 14px;
+  right: 16px;
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding-top: 8px;
+  gap: 10px;
 }
 
+/* Profile bar — white section below banner */
+.dash-profile-bar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-top: none;
+  border-radius: 0 0 14px 14px;
+  padding: 0 20px 18px 20px;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  box-shadow: 0 4px 12px rgba(0,40,85,0.07);
+}
+
+/* Avatar — overlaps banner bottom edge */
 .dash-banner-avatar-wrap {
-  width: 72px;
-  height: 72px;
+  margin-top: -36px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
-  background: rgba(0,180,216,0.15);
-  border: 2px solid rgba(0,180,216,0.4);
+  background: #e2e8f0;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #90e0ef;
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -361,47 +358,54 @@ button:active { transform: scale(0.96) !important; }
   object-fit: cover;
 }
 
-.dash-banner-avatar-icon { opacity: 0.75; }
+.dash-banner-avatar-initials {
+  font-size: 26px;
+  font-weight: 800;
+  color: #475569;
+  user-select: none;
+}
 
-.dash-banner-info {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* Name + sub info */
+.dash-profile-meta {
+  flex: 1;
+  padding-bottom: 2px;
 }
 
 .dash-welcome {
-  font-size: clamp(22px, 2.8vw, 32px);
+  font-size: clamp(18px, 2.5vw, 26px);
   font-weight: 800;
-  color: #ffffff;
-  letter-spacing: -0.8px;
-  margin: 0;
-  line-height: 1.1;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  color: #0f172a;
+  letter-spacing: -0.6px;
+  margin: 0 0 3px;
+  line-height: 1.2;
 }
 
-.dash-banner-chips {
+.dash-profile-sub {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Sign-out shortcut in profile bar */
+.dash-profile-signout {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.dash-chip {
-  font-size: 11px;
+  gap: 5px;
+  background: none;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  color: #64748b;
+  font-size: 12px;
   font-weight: 700;
-  color: rgba(255,255,255,0.8);
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 20px;
-  padding: 3px 10px;
-  letter-spacing: 0.2px;
+  padding: 6px 12px;
+  cursor: pointer;
   white-space: nowrap;
+  align-self: flex-end;
+  margin-bottom: 2px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.dash-chip--dim {
-  color: rgba(255,255,255,0.45);
-  background: rgba(255,255,255,0.05);
-  border-color: rgba(255,255,255,0.08);
-}
+.dash-profile-signout:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
 
 .dash-header-right {
   display: flex;
@@ -425,7 +429,7 @@ button:active { transform: scale(0.96) !important; }
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
-.dash-bell-btn:hover { background: rgba(0,180,216,0.22); color: #0891b2; }
+.dash-bell-btn:hover { background: rgba(0,180,216,0.22); color: #90e0ef; }
 
 .dash-bell-badge {
   position: absolute;
@@ -775,7 +779,7 @@ button:active { transform: scale(0.96) !important; }
   border-radius: 50%;
   background: rgba(255,255,255,0.12);
   border: 1px solid rgba(255,255,255,0.2);
-  color: rgba(255,255,255,0.6);
+  color: rgba(255,255,255,0.85);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -833,7 +837,7 @@ button:active { transform: scale(0.96) !important; }
   justify-content: center;
   background: none;
   border: none;
-  color: rgba(255,255,255,0.55);
+  color: rgba(255,255,255,0.8);
   cursor: pointer;
   padding: 3px;
   border-radius: 4px;
@@ -958,7 +962,7 @@ button:active { transform: scale(0.96) !important; }
   gap: 3px;
   background: none;
   border: none;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.7);
   font-size: 9px;
   font-weight: 700;
   padding: 6px 10px;
@@ -983,17 +987,16 @@ button:active { transform: scale(0.96) !important; }
     width: 100%;
     box-sizing: border-box;
   }
-  .dash-main-header {
-    padding: 16px 16px 20px;
-    margin-bottom: 16px;
-    border-radius: 12px;
-  }
-  .dash-banner-actions { top: 14px; right: 14px; }
-  .dash-banner-avatar-wrap { width: 56px; height: 56px; }
-  .dash-welcome { font-size: 20px; letter-spacing: -0.5px; }
-  .dash-chip { font-size: 10px; padding: 2px 8px; }
-  .dash-chip--dim { display: none; }
-  .scs-logo-corner { height: 32px; }
+  .dash-profile-header { margin-bottom: 16px; }
+  .dash-banner-strip { height: 100px; border-radius: 10px 10px 0 0; }
+  .dash-banner-actions { top: 10px; right: 12px; }
+  .dash-banner-avatar-wrap { width: 60px; height: 60px; margin-top: -28px; border-width: 2px; }
+  .dash-banner-avatar-initials { font-size: 20px; }
+  .dash-profile-bar { padding: 0 14px 14px; gap: 10px; border-radius: 0 0 10px 10px; }
+  .dash-welcome { font-size: 17px; }
+  .dash-profile-sub { font-size: 11px; }
+  .dash-profile-signout { display: none; }
+  .scs-logo-corner { height: 28px; }
   .times-grid { grid-template-columns: 1fr 1fr; }
   .notifs-panel { margin-bottom: 16px; }
 }
