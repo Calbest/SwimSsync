@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Pencil, Check, User, LogOut, Settings, Trophy, Target, Upload, TrendingUp, HelpCircle, CheckCircle2, X, CalendarCheck, ArrowLeftRight, Bell, Star, Clock, Zap } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { playClick, playDelete, playSave, playNavigate } from '../lib/sounds'
+import { playClick, playSave, playNavigate } from '../lib/sounds'
 import './Dashboard.css'
 
 type EventEntry = { id: string; label: string }
