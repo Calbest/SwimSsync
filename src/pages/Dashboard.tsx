@@ -421,6 +421,11 @@ export default function Dashboard() {
           <span>Settings</span>
         </button>
 
+        <button className="dash-help-sidebar" onClick={() => setShowHelp(v => !v)}>
+          <HelpCircle size={16} />
+          <span>Help &amp; Feedback</span>
+        </button>
+
         <button className="dash-signout" onClick={() => { playClick(); handleSignOut() }}>
           <LogOut size={16} />
           <span>Sign out</span>
@@ -612,15 +617,6 @@ export default function Dashboard() {
 
       </main>
 
-      {/* ── Help FAB ── */}
-      <button
-        className={`help-fab${showHelp ? ' help-fab--active' : ''}`}
-        onClick={() => setShowHelp(v => !v)}
-        title="Help & Feedback"
-      >
-        {showHelp ? <X size={18} /> : <HelpCircle size={18} />}
-      </button>
-
       {showHelp && (
         <div className="help-panel">
           <div className="help-panel-header">
@@ -697,6 +693,10 @@ export default function Dashboard() {
         <button className="dash-mobile-nav-btn" onClick={() => { playNavigate(); navigate('/settings') }}>
           <Settings size={20} />
           Settings
+        </button>
+        <button className="dash-mobile-nav-btn" onClick={() => setShowHelp(v => !v)}>
+          <HelpCircle size={20} />
+          Help
         </button>
       </nav>
     </div>

@@ -795,11 +795,34 @@ button:active { transform: scale(0.96) !important; }
   box-shadow: 0 0 0 4px rgba(0,180,216,0.15);
 }
 
+/* ── Help sidebar button ── */
+.dash-help-sidebar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  color: rgba(255,255,255,0.8);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+  margin-top: 4px;
+}
+.dash-help-sidebar:hover {
+  background: rgba(0,180,216,0.2);
+  color: #ffffff;
+}
+
 /* ── Help panel ── */
 .help-panel {
   position: fixed;
-  bottom: 72px;
-  left: 20px;
+  bottom: 24px;
+  left: 220px;
   width: 304px;
   background: #ffffff;
   border-radius: 16px;
@@ -999,4 +1022,13 @@ button:active { transform: scale(0.96) !important; }
   .scs-logo-corner { height: 28px; }
   .times-grid { grid-template-columns: 1fr 1fr; }
   .notifs-panel { margin-bottom: 16px; }
+
+  /* Help panel: float above mobile nav, centered */
+  .help-panel {
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(72px + env(safe-area-inset-bottom) + 8px);
+    width: calc(100vw - 32px);
+    max-width: 360px;
+  }
 }
