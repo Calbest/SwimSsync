@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard } from 'lucide-react'
+import { LayoutDashboard, BookOpen } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { SCS_STANDARDS, getAgeGroup, getCut, type StdLevel } from '../lib/scsStandards'
+import ColorLegend from '../components/ColorLegend'
 import './Qualifications.css'
 
 type Course = 'SCY' | 'LCM' | 'SCM'
@@ -135,6 +136,7 @@ function getProximityClass(userSec: number | null, cutSec: number | null): strin
 
 export default function Qualifications() {
   const navigate = useNavigate()
+  const [showLegend, setShowLegend] = useState(false)
   const [course,  setCourse]  = useState<Course>('SCY')
   const [times,   setTimes]   = useState<Record<string, string>>({})
   const [dob,     setDob]     = useState('')
@@ -191,6 +193,8 @@ export default function Qualifications() {
   return (
     <div className="quals-layout">
 
+      {showLegend && <ColorLegend onClose={() => setShowLegend(false)} />}
+
       {/* ── Sidebar ── */}
       <aside className="quals-sidebar">
         <div className="quals-sidebar-brand">Competitions</div>
@@ -198,6 +202,10 @@ export default function Qualifications() {
           <button className="quals-nav-btn" onClick={() => navigate('/dashboard')}>
             <LayoutDashboard size={16} />
             <span>Dashboard</span>
+          </button>
+          <button className="quals-nav-btn" onClick={() => setShowLegend(true)}>
+            <BookOpen size={16} />
+            <span>Color Legend</span>
           </button>
         </nav>
       </aside>
