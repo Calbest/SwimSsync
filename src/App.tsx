@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import './App.css'
 
-function StarRating() {
+function StarRating({ onDone }: { onDone?: () => void }) {
   const [hovered,  setHovered]  = useState(0)
   const [selected, setSelected] = useState(0)
   const [comment,  setComment]  = useState('')
@@ -16,6 +16,7 @@ function StarRating() {
       .from('ratings')
       .insert({ stars: selected, comment: comment.trim() || null })
     setStatus(error ? 'error' : 'done')
+    if (!error) onDone?.()
   }
 
   if (status === 'done') {
@@ -82,6 +83,68 @@ function StarRating() {
         )}
       </div>
     </section>
+  )
+}
+
+interface Review { id: number; comment: string; created_at: string }
+
+function ReviewsCarousel({ refresh }: { refresh: number }) {
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [idx,     setIdx]     = useState(0)
+
+  useEffect(() => {
+    supabase
+      .from('ratings')
+      .select('id, comment, created_at')
+      .eq('stars', 5)
+      .not('comment', 'is', null)
+      .neq('comment', '')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { if (data) setReviews(data as Review[]) })
+  }, [refresh])
+
+  if (reviews.length === 0) return null
+
+  const prev = () => setIdx(i => (i - 1 + reviews.length) % reviews.length)
+  const next = () => setIdx(i => (i + 1) % reviews.length)
+  const r = reviews[idx]
+
+  return (
+    <div className="reviews-carousel">
+      <h3 className="reviews-title">★★★★★ What People Are Saying</h3>
+      <div className="reviews-track">
+        <button className="reviews-arrow" onClick={prev} aria-label="Previous">&#8592;</button>
+        <div className="reviews-bubble">
+          <p className="reviews-comment">"{r.comment}"</p>
+          <span className="reviews-date">
+            {new Date(r.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </span>
+        </div>
+        <button className="reviews-arrow" onClick={next} aria-label="Next">&#8594;</button>
+      </div>
+      {reviews.length > 1 && (
+        <div className="reviews-dots">
+          {reviews.map((_, i) => (
+            <button
+              key={i}
+              className={`reviews-dot${i === idx ? ' active' : ''}`}
+              onClick={() => setIdx(i)}
+              aria-label={`Review ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function RatingSection() {
+  const [refreshKey, setRefreshKey] = useState(0)
+  return (
+    <>
+      <StarRating onDone={() => setRefreshKey(k => k + 1)} />
+      <ReviewsCarousel refresh={refreshKey} />
+    </>
   )
 }
 
@@ -384,9 +447,9 @@ function App() {
         <div className="creators-card" data-reveal data-reveal-delay="2">
           <div className="creators-photo-wrap">
             <img
-              src={creatorTab === 'caleb' ? '/photos/IMG_0942.jpeg' : '/photos/IMG_4189.jpeg'}
+              src={creatorTab === 'caleb' ? '/photos/IMG_4189.jpeg' : '/photos/IMG_0942.jpeg'}
               alt={creatorTab === 'caleb' ? 'Caleb Pang' : 'Mason Jung'}
-              className={`creators-photo${creatorTab === 'mason' ? ' creators-photo--raw' : ''}`}
+              className={`creators-photo${creatorTab === 'caleb' ? ' creators-photo--caleb' : ' creators-photo--mason'}`}
               onError={e => {
                 const img = e.currentTarget as HTMLImageElement
                 img.style.display = 'none'
@@ -425,8 +488,8 @@ function App() {
         </div>
       </section>
 
-      {/* ── Star Rating ── */}
-      <StarRating />
+      {/* ── Star Rating + Reviews ── */}
+      <RatingSection />
 
       {/* ── Connect / Socials ── */}
       <section className="connect">
