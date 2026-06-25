@@ -86,10 +86,10 @@ function App() {
       <section className="purpose">
         <h2 data-reveal>What is SwimSCPlan?</h2>
         <ul className="purpose-list">
-          <li data-reveal data-reveal-delay="1">Compare all your swim event times against upcoming meet cut times at a glance</li>
-          <li data-reveal data-reveal-delay="2">Track your progress over time and watch yourself improve as you grow</li>
-          <li data-reveal data-reveal-delay="3">Built-in calendar to organize and keep up with all your upcoming meets</li>
-          <li data-reveal data-reveal-delay="4">Highlights the events where your times are closest to qualifying cuts so you know exactly where to focus</li>
+          <li data-reveal data-reveal-delay="1">Compare every event time against SCS national and championship qualifying cuts — color-coded so you know exactly how close you are</li>
+          <li data-reveal data-reveal-delay="2">Import your times directly from USA Swimming or Swimcloud and have them populate your dashboard, progress history, and event analysis automatically</li>
+          <li data-reveal data-reveal-delay="3">Plan which events to enter at any meet — paste the schedule, see a ranked recommendation for each event based on your times and how recently they were swum</li>
+          <li data-reveal data-reveal-delay="4">Track goals, log splits, visualize progress over time, and keep everything in one place instead of scattered across spreadsheets and PDF cut sheets</li>
         </ul>
       </section>
 
@@ -99,37 +99,72 @@ function App() {
         <div className="features-grid">
           <div className="feature-card" data-reveal data-reveal-delay="1">
             <div className="feature-img-placeholder">
-              {/* TODO: Replace with calendar screenshot */}
-              <span>Calendar Image</span>
+              <span>📊</span>
             </div>
-            <h3 className="feature-title">Meet Calendar</h3>
+            <h3 className="feature-title">Compare Times</h3>
             <p className="feature-blurb">
-              See all your upcoming meets in one view. Never miss a registration
-              deadline or warm-up time again.
+              Line up your personal bests against SCS qualifying standards for every event and course.
+              Five color tiers show exactly how close you are — from "Meets Cut" to "Needs Work" —
+              plus inline split logging for each event.
             </p>
           </div>
 
           <div className="feature-card" data-reveal data-reveal-delay="2">
             <div className="feature-img-placeholder">
-              {/* TODO: Replace with event list screenshot */}
-              <span>Event List Image</span>
+              <span>🏆</span>
             </div>
-            <h3 className="feature-title">Event Time Comparison</h3>
+            <h3 className="feature-title">Qualifications View</h3>
             <p className="feature-blurb">
-              Line up your personal bests next to meet cut times and instantly
-              see which events you're closest to qualifying for.
+              See which SCS championship meets (WAG, JAG, Elite Ch, SAG) you currently qualify for
+              across every event side by side. Summary cards count how many cuts you've hit per meet.
             </p>
           </div>
 
           <div className="feature-card" data-reveal data-reveal-delay="3">
             <div className="feature-img-placeholder">
-              {/* TODO: Replace with progress chart screenshot */}
-              <span>Progress Chart Image</span>
+              <span>📈</span>
             </div>
             <h3 className="feature-title">Progress Tracker</h3>
             <p className="feature-blurb">
-              Watch your times drop over seasons with visual charts that show
-              exactly how far you've come since you started.
+              Watch your times drop with an SVG line chart for each event. Add entries manually or
+              import from USA Swimming to auto-populate history. See your best time, total improvement,
+              and number of swims logged.
+            </p>
+          </div>
+
+          <div className="feature-card" data-reveal data-reveal-delay="1">
+            <div className="feature-img-placeholder">
+              <span>📥</span>
+            </div>
+            <h3 className="feature-title">Import Times</h3>
+            <p className="feature-blurb">
+              Copy your times from USA Swimming or Swimcloud and paste them in.
+              The parser pulls out events, courses, and times automatically — no formatting needed.
+              Saves to your dashboard and progress history in one click.
+            </p>
+          </div>
+
+          <div className="feature-card" data-reveal data-reveal-delay="2">
+            <div className="feature-img-placeholder">
+              <span>📅</span>
+            </div>
+            <h3 className="feature-title">Event Planning</h3>
+            <p className="feature-blurb">
+              Paste a meet schedule and instantly see which events to enter. Each event gets
+              an Enter / Consider / Skip recommendation based on your proximity to the standard
+              and how recently the time was swum. Includes entry deadline countdown.
+            </p>
+          </div>
+
+          <div className="feature-card" data-reveal data-reveal-delay="3">
+            <div className="feature-img-placeholder">
+              <span>🎯</span>
+            </div>
+            <h3 className="feature-title">Goals</h3>
+            <p className="feature-blurb">
+              Set target times for specific events and courses with optional deadlines.
+              Goals appear alongside your best times across the app so you always know
+              what you're chasing and how close you are.
             </p>
           </div>
         </div>
