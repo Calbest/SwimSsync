@@ -75,7 +75,7 @@
   padding: 11px 16px;
   border: 2px solid #002855;
   border-radius: 10px;
-  background: #c8d8e8;
+  background: #ffffff;
   color: #002855;
   font-size: 14px;
   font-weight: 700;
@@ -83,7 +83,7 @@
   transition: background 0.15s, color 0.15s;
   letter-spacing: 0.2px;
 }
-.settings-tab:hover { background: #b0c8e0; }
+.settings-tab:hover { background: #e8f0fa; }
 .settings-tab.active {
   background: #002855;
   color: #ffffff;
