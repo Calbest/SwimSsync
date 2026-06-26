@@ -222,14 +222,12 @@ p { margin: 0; }
   line-height: 1.7;
 }
 
-/* Scoped hero heading styles (bold Bebas Neue + gradients) */
+/* Scoped hero heading styles (bold system font + gradients) */
 .hero-heading {
-  font-family: 'Bebas Neue', sans-serif;
   font-size: clamp(48px, 7vw, 96px);
-  line-height: 1;
-  font-weight: 400;
-  letter-spacing: 1px;
-  text-transform: uppercase;
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -2px;
   background: linear-gradient(135deg, var(--teal-light) 0%, var(--white) 100%);
   -webkit-background-clip: text;
   background-clip: text;
