@@ -58,10 +58,38 @@
   max-width: 680px;
   width: 100%;
   margin: 0 auto;
-  padding: 40px 24px 60px;
+  padding: 32px 24px 60px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+/* ── Tab nav ── */
+.settings-tabs {
+  display: flex;
+  gap: 8px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 1px 4px rgba(0,40,85,0.08);
+}
+
+.settings-tab {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.settings-tab:hover { background: #f0f6ff; color: #0f172a; }
+.settings-tab.active {
+  background: #002855;
+  color: #ffffff;
 }
 
 /* ── Card ── */

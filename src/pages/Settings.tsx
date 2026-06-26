@@ -78,6 +78,9 @@ export default function Settings() {
   const [brushSize,    setBrushSize]    = useState(12)
   const [isEraser,     setIsEraser]     = useState(false)
 
+  // Active tab
+  const [settingsTab, setSettingsTab] = useState<'profile' | 'account'>('profile')
+
   // Notifications
   const [notifPrefs, setNotifPrefs] = useState({
     personalBests:    true,
@@ -369,6 +372,24 @@ export default function Settings() {
 
       <div className="settings-body">
 
+        {/* ── Tab nav ── */}
+        <div className="settings-tabs">
+          <button
+            className={`settings-tab${settingsTab === 'profile' ? ' active' : ''}`}
+            onClick={() => setSettingsTab('profile')}
+          >
+            Profile
+          </button>
+          <button
+            className={`settings-tab${settingsTab === 'account' ? ' active' : ''}`}
+            onClick={() => setSettingsTab('account')}
+          >
+            Account &amp; Security
+          </button>
+        </div>
+
+        {settingsTab === 'profile' && <>
+
         {/* ── Profile Picture ── */}
         <section className="settings-card">
           <h2 className="settings-section-title">Profile Picture</h2>
@@ -624,6 +645,10 @@ export default function Settings() {
           </div>
         </section>
 
+        </>}
+
+        {settingsTab === 'account' && <>
+
         {/* ── Account ── */}
         <section className="settings-card">
           <h2 className="settings-section-title">Account</h2>
@@ -852,6 +877,8 @@ export default function Settings() {
             </div>
           )}
         </section>
+
+        </>}
 
       </div>
     </div>
