@@ -251,7 +251,7 @@
 }
 .import-table-head {
   display: grid;
-  grid-template-columns: 32px 72px 1fr 130px 130px;
+  grid-template-columns: 32px 72px 1fr 120px 72px 100px;
   gap: 12px;
   align-items: center;
   padding: 10px 20px;
@@ -266,13 +266,24 @@
 
 .import-row {
   display: grid;
-  grid-template-columns: 32px 72px 1fr 130px 130px;
+  grid-template-columns: 32px 72px 1fr 120px 72px 100px;
   gap: 12px;
   align-items: center;
   padding: 11px 20px;
   border-bottom: 1px solid #f1f5f9;
   cursor: pointer;
   transition: background 0.1s;
+}
+
+.import-swims-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+}
+.import-undated {
+  color: #f59e0b;
+  font-size: 12px;
+  margin-left: 2px;
 }
 .import-row:last-child { border-bottom: none; }
 .import-row:hover { background: #f8fbff; }

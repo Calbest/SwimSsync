@@ -4,20 +4,24 @@ import { ArrowLeft, AlertTriangle, CheckCircle2, Info } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import './Import.css'
 
-// ─── Parser ────────────────────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────────────────────
 
 type Course = 'SCY' | 'LCM' | 'SCM'
+
+interface SwimEntry { date: string; time: string }
 
 interface ParsedRow {
   key: string
   course: Course
   eventId: string
   eventLabel: string
-  time: string
+  bestTime: string
+  entries: SwimEntry[]
   selected: boolean
 }
 
-// Ordered longest-first so "1650 Free" matches before "50 Free"
+// ─── Event patterns ─────────────────────────────────────────────────────────
+
 const EVENT_PATTERNS: Array<[RegExp, string, string]> = [
   [/\b1650\s*(freestyle|free|fr)\b/i,                   '1650-free',  '1650 Free'],
   [/\b1500\s*(freestyle|free|fr)\b/i,                   '1500-free',  '1500 Free'],
@@ -44,8 +48,32 @@ const EVENT_PATTERNS: Array<[RegExp, string, string]> = [
 
 const COURSE_RE = /\b(SCY|LCM|SCM)\b/i
 const TIME_RE   = /\b(\d{1,2}:\d{2}\.\d{2}|\d{1,2}\.\d{2})\b/
-// Exclude obvious non-times like dates (e.g. "01/15") and years
 const SKIP_LINE = /^(event|course|standard|meet name|club|lsc|date|age|time\b|swimmer|name\b)/i
+
+const MONTH_NAMES: Record<string, string> = {
+  jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',
+  jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12',
+}
+
+function extractDate(line: string): string | null {
+  // MM/DD/YYYY or M/D/YYYY
+  let m = line.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/)
+  if (m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`
+
+  // YYYY-MM-DD
+  m = line.match(/\b(\d{4})-(\d{2})-(\d{2})\b/)
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`
+
+  // "Jan 15, 2025" or "January 15, 2025"
+  m = line.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2}),?\s+(\d{4})\b/i)
+  if (m) return `${m[3]}-${MONTH_NAMES[m[1].toLowerCase().slice(0,3)]}-${m[2].padStart(2,'0')}`
+
+  // "Jan 2025" or "January 2025" (no day — use 01)
+  m = line.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{4})\b/i)
+  if (m) return `${m[2]}-${MONTH_NAMES[m[1].toLowerCase().slice(0,3)]}-01`
+
+  return null
+}
 
 function toSec(t: string): number {
   const p = t.split(':')
@@ -54,12 +82,12 @@ function toSec(t: string): number {
 
 function parseRawText(raw: string): ParsedRow[] {
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean)
-  const best  = new Map<string, ParsedRow>()
+  const map = new Map<string, { course: Course; eventId: string; eventLabel: string; entries: SwimEntry[] }>()
 
   for (const line of lines) {
     if (SKIP_LINE.test(line)) continue
 
-    const timeMatch = line.match(TIME_RE)
+    const timeMatch   = line.match(TIME_RE)
     if (!timeMatch) continue
 
     const courseMatch = line.match(COURSE_RE)
@@ -75,16 +103,26 @@ function parseRawText(raw: string): ParsedRow[] {
     const [eventId, eventLabel] = foundEvent
     const time = timeMatch[1]
     const key  = `${course}-${eventId}`
+    const date = extractDate(line) ?? 'unknown'
 
-    const existing = best.get(key)
-    if (!existing || toSec(time) < toSec(existing.time)) {
-      best.set(key, { key, course, eventId, eventLabel, time, selected: true })
+    const existing = map.get(key)
+    if (existing) {
+      // Only add if not a duplicate date+time pair
+      if (!existing.entries.some(e => e.date === date && e.time === time)) {
+        existing.entries.push({ date, time })
+      }
+    } else {
+      map.set(key, { course, eventId, eventLabel, entries: [{ date, time }] })
     }
   }
 
   const ORDER: Course[] = ['SCY', 'LCM', 'SCM']
   const EVENT_ORDER = EVENT_PATTERNS.map(([,id]) => id)
-  return Array.from(best.values()).sort((a, b) => {
+
+  return Array.from(map.entries()).map(([key, { course, eventId, eventLabel, entries }]) => {
+    const bestTime = entries.reduce((b, e) => toSec(e.time) < toSec(b.time) ? e : b).time
+    return { key, course, eventId, eventLabel, bestTime, entries, selected: true }
+  }).sort((a, b) => {
     const ci = ORDER.indexOf(a.course) - ORDER.indexOf(b.course)
     if (ci !== 0) return ci
     return EVENT_ORDER.indexOf(a.eventId) - EVENT_ORDER.indexOf(b.eventId)
@@ -94,12 +132,12 @@ function parseRawText(raw: string): ParsedRow[] {
 // ─── Component ─────────────────────────────────────────────────────────────
 
 type Step   = 'paste' | 'review'
-type Source = 'usaswim' | 'swimcloud'
+type Source = 'swimstandards' | 'usaswim' | 'swimcloud'
 
 export default function Import() {
   const navigate = useNavigate()
   const [step,       setStep]       = useState<Step>('paste')
-  const [source,     setSource]     = useState<Source>('usaswim')
+  const [source,     setSource]     = useState<Source>('swimstandards')
   const [rawText,    setRawText]    = useState('')
   const [parsed,     setParsed]     = useState<ParsedRow[]>([])
   const [existing,   setExisting]   = useState<Record<string, string>>({})
@@ -144,18 +182,21 @@ export default function Import() {
     const user = data.session?.user
     if (!user) { navigate('/'); return }
 
-    const today = new Date().toISOString().slice(0, 10)
     const mergedTimes: Record<string, string> = { ...(user.user_metadata?.times ?? {}) }
-    const mergedHistory: Record<string, { date: string; time: string }[]> =
-      { ...(user.user_metadata?.timeHistory ?? {}) }
+    const mergedHistory: Record<string, SwimEntry[]> = { ...(user.user_metadata?.timeHistory ?? {}) }
 
     for (const row of toSave) {
-      mergedTimes[row.key] = row.time
-      const existing = mergedHistory[row.key] ?? []
-      // Skip if this exact time was already recorded today
-      if (!existing.some(e => e.date === today && e.time === row.time)) {
-        mergedHistory[row.key] = [...existing, { date: today, time: row.time }]
+      // PR = fastest of all imported entries for this event
+      mergedTimes[row.key] = row.bestTime
+
+      // Merge all entries into history (deduplicate by date+time)
+      const hist = [...(mergedHistory[row.key] ?? [])]
+      for (const entry of row.entries) {
+        if (!hist.some(e => e.date === entry.date && e.time === entry.time)) {
+          hist.push(entry)
+        }
       }
+      mergedHistory[row.key] = hist
     }
 
     await supabase.auth.updateUser({ data: { times: mergedTimes, timeHistory: mergedHistory } })
@@ -164,6 +205,8 @@ export default function Import() {
   }
 
   const selectedCount = parsed.filter(r => r.selected).length
+  const totalEntries  = parsed.filter(r => r.selected).reduce((s, r) => s + r.entries.length, 0)
+  const withDates     = parsed.filter(r => r.selected).reduce((s, r) => s + r.entries.filter(e => e.date !== 'unknown').length, 0)
 
   // ── Paste step ──────────────────────────────────────────────────────────
   if (step === 'paste') return (
@@ -179,30 +222,21 @@ export default function Import() {
 
       <div className="import-body">
 
-        {/* ── Notices ── */}
         <div className="import-notice import-notice--info">
           <Info size={16} className="import-notice-icon" />
           <div>
-            <strong>No setup required.</strong> This is a free, client-side text parser —
-            no API key or account needed. Copy your times from a browser tab and paste
-            them below.
-          </div>
-        </div>
-
-        <div className="import-notice import-notice--warn">
-          <AlertTriangle size={16} className="import-notice-icon" />
-          <div>
-            <strong>Before you import:</strong> Each line in your pasted text must include
-            an <strong>event name</strong> (e.g. "100 Freestyle"), a <strong>course</strong>{' '}
-            (SCY, LCM, or SCM), and a <strong>time</strong> (e.g. 52.34 or 1:52.34)
-            on the <em>same row</em>. If course is missing from a row, that row will be skipped.
-            Always review before saving.
+            <strong>Imports your full progression</strong> — every swim with its date, not just your best times.
+            All entries are saved to your Progress Tracker so you can see your improvement over time.
           </div>
         </div>
 
         {/* ── Source tabs + instructions ── */}
         <div className="import-card">
           <div className="import-source-tabs">
+            <button
+              className={`import-source-tab${source === 'swimstandards' ? ' active' : ''}`}
+              onClick={() => setSource('swimstandards')}
+            >Swim Standards</button>
             <button
               className={`import-source-tab${source === 'usaswim' ? ' active' : ''}`}
               onClick={() => setSource('usaswim')}
@@ -213,7 +247,24 @@ export default function Import() {
             >Swimcloud</button>
           </div>
 
-          {source === 'usaswim' ? (
+          {source === 'swimstandards' && (
+            <ol className="import-steps">
+              <li>Go to <strong>swimstandards.com/swimmer/[your-name]</strong> — search for your profile if you don't have the link.</li>
+              <li>Scroll down to the <strong>Progression</strong> section. Each event has a table showing every recorded swim with its date and time.</li>
+              <li>Click inside the progression table for the event you want, then <strong>Select All</strong> (Ctrl+A / Cmd+A) and <strong>Copy</strong> (Ctrl+C / Cmd+C).</li>
+              <li>Paste below. Repeat for each event, or open multiple events and copy them all at once if the site allows it.</li>
+              <li className="import-step-note">
+                <Info size={13} />
+                Swim Standards includes the date for each swim — these will be automatically detected and saved to your Progress Tracker so your chart shows real improvement over time.
+              </li>
+              <li className="import-step-note">
+                <AlertTriangle size={13} />
+                Make sure each row has the <strong>course</strong> (SCY, LCM, or SCM) visible in the copied text. If the course isn't on the row, that swim will be skipped.
+              </li>
+            </ol>
+          )}
+
+          {source === 'usaswim' && (
             <ol className="import-steps">
               <li>Go to <strong>usaswimming.org</strong> → Times → Individual Times Search</li>
               <li>Enter your first and last name. Set <strong>Course</strong> to <em>All Courses</em> so SCY, LCM, and SCM all appear.</li>
@@ -221,17 +272,17 @@ export default function Import() {
               <li>Click anywhere inside the results table, then <strong>Select All</strong> (Ctrl+A / Cmd+A).</li>
               <li>Copy (Ctrl+C / Cmd+C), then paste in the box below.</li>
               <li className="import-step-note">
-                <AlertTriangle size={13} />
-                You may need to be <strong>logged in</strong> to USA Swimming to see your full history.
-                If no times appear, create a free account and link your swimmer profile.
+                <Info size={13} />
+                USA Swimming shows every recorded swim with dates — all of them will be imported into your Progress Tracker.
               </li>
               <li className="import-step-note">
                 <AlertTriangle size={13} />
-                USA Swimming shows <strong>every recorded swim</strong>, not just your bests.
-                The importer automatically keeps the <strong>fastest time</strong> per event per course.
+                You may need to be <strong>logged in</strong> to USA Swimming to see your full history.
               </li>
             </ol>
-          ) : (
+          )}
+
+          {source === 'swimcloud' && (
             <ol className="import-steps">
               <li>Go to <strong>swimcloud.com</strong> and find your swimmer profile.</li>
               <li>Click the <strong>Times</strong> tab (the full meet-by-meet list, not the Best Times summary table).</li>
@@ -239,7 +290,7 @@ export default function Import() {
               <li>Copy (Ctrl+C / Cmd+C), then paste in the box below.</li>
               <li className="import-step-note">
                 <AlertTriangle size={13} />
-                <span>Swimcloud's Best Times comparison table puts SCY and LCM on the <strong>same row</strong>, which can confuse the parser. The individual Times tab (one row per swim) works much better.</span>
+                <span>Use the individual Times tab (one row per swim) — the Best Times comparison table puts SCY and LCM on the same row and confuses the parser.</span>
               </li>
               <li className="import-step-note">
                 <AlertTriangle size={13} />
@@ -254,11 +305,9 @@ export default function Import() {
           <label className="import-label">Paste your times here</label>
           <textarea
             className="import-textarea"
-            placeholder={
-              source === 'usaswim'
-                ? 'Paste your USA Swimming results here…\n\nExample of what a copied row might look like:\n50 Freestyle\tSCY\tA\t23.45\tJanuary 15, 2025\t17\tSome Meet\tYour Club\tPC'
-                : 'Paste your Swimcloud times here…\n\nExample of what a copied row might look like:\n50 Freestyle\t23.45\tSCY\tJan 2025\tSome Meet'
-            }
+            placeholder="Paste your copied times here…
+
+Each row should contain an event name (e.g. '100 Freestyle'), a course (SCY / LCM / SCM), and a time (e.g. 52.34 or 1:52.34). Dates are detected automatically when present."
             value={rawText}
             onChange={e => { setRawText(e.target.value); setParseError('') }}
             rows={12}
@@ -303,10 +352,8 @@ export default function Import() {
         <div className="import-notice import-notice--info">
           <CheckCircle2 size={16} className="import-notice-icon" />
           <div>
-            Found <strong>{parsed.length}</strong> unique event{parsed.length !== 1 ? 's' : ''}.
-            Check the rows below, uncheck anything that looks wrong, then click Save.
-            Saving will <strong>overwrite</strong> your existing time for each checked event
-            and <strong>add a dated entry</strong> to your Progress history automatically.
+            Found <strong>{parsed.length}</strong> event{parsed.length !== 1 ? 's' : ''} with <strong>{totalEntries}</strong> total swim{totalEntries !== 1 ? 's' : ''} ({withDates} with dates).
+            Each swim will be added to your Progress Tracker. Your dashboard PR will be set to the fastest imported time per event.
           </div>
         </div>
 
@@ -328,16 +375,18 @@ export default function Import() {
               <span />
               <span>Course</span>
               <span>Event</span>
-              <span>Imported Time</span>
-              <span>Current Time</span>
+              <span>Best Time</span>
+              <span>Swims</span>
+              <span>Current PR</span>
             </div>
 
             {parsed.map(row => {
-              const curr = existing[row.key] || ''
+              const curr    = existing[row.key] || ''
               const currSec = curr ? toSec(curr) : null
-              const newSec  = toSec(row.time)
+              const newSec  = toSec(row.bestTime)
               const isFaster = currSec !== null && newSec < currSec
               const isSlower = currSec !== null && newSec > currSec
+              const datedCount = row.entries.filter(e => e.date !== 'unknown').length
 
               return (
                 <label key={row.key} className={`import-row${row.selected ? '' : ' import-row--unchecked'}`}>
@@ -351,9 +400,15 @@ export default function Import() {
                   </span>
                   <span className="import-event">{row.eventLabel}</span>
                   <span className={`import-time-new${isFaster ? ' import-time-new--faster' : isSlower ? ' import-time-new--slower' : ''}`}>
-                    {row.time}
+                    {row.bestTime}
                     {isFaster && <span className="import-tag import-tag--faster">↑ PR</span>}
                     {isSlower && <span className="import-tag import-tag--slower">↓ slower</span>}
+                  </span>
+                  <span className="import-swims-count">
+                    {row.entries.length}
+                    {datedCount < row.entries.length && (
+                      <span className="import-undated" title={`${row.entries.length - datedCount} without a date`}> ⚠</span>
+                    )}
                   </span>
                   <span className="import-time-curr">{curr || '—'}</span>
                 </label>
@@ -370,7 +425,7 @@ export default function Import() {
               onClick={handleSave}
               disabled={selectedCount === 0 || saving}
             >
-              {saving ? 'Saving…' : `Save ${selectedCount} time${selectedCount !== 1 ? 's' : ''}`}
+              {saving ? 'Saving…' : `Save ${selectedCount} event${selectedCount !== 1 ? 's' : ''} · ${totalEntries} swim${totalEntries !== 1 ? 's' : ''}`}
             </button>
           </div>
         </div>
