@@ -252,6 +252,94 @@ function isValidTime(value: string): boolean {
   return parseInt(match[1], 10) <= 59
 }
 
+function parseSecs(t: string): number {
+  if (!t) return 0
+  const parts = t.split(':')
+  if (parts.length === 2) return parseFloat(parts[0]) * 60 + parseFloat(parts[1])
+  return parseFloat(t)
+}
+
+// Reference: best (fast) and baseline (slow) seconds for each stroke's primary event
+const STROKE_REF: Record<string, { fast: number; slow: number; events: string[]; label: string }> = {
+  free:   { label: 'Free',   fast: 50,  slow: 90,  events: ['100-free',  '200-free',  '50-free']  },
+  back:   { label: 'Back',   fast: 58,  slow: 98,  events: ['100-back',  '200-back',  '50-back']  },
+  breast: { label: 'Breast', fast: 66,  slow: 110, events: ['100-breast','200-breast', '50-breast'] },
+  fly:    { label: 'Fly',    fast: 57,  slow: 98,  events: ['100-fly',   '200-fly',   '50-fly']   },
+  im:     { label: 'IM',     fast: 130, slow: 210, events: ['200-im',    '400-im']                 },
+}
+const STROKE_ORDER = ['free', 'back', 'breast', 'fly', 'im']
+
+function SpecialtyChart({ times, course }: { times: Times; course: Course }) {
+  const SIZE = 200
+  const CX = SIZE / 2
+  const CY = SIZE / 2
+  const R  = 80
+  const N  = 5
+
+  function point(i: number, r: number) {
+    const angle = (i * 2 * Math.PI) / N - Math.PI / 2
+    return { x: CX + r * Math.cos(angle), y: CY + r * Math.sin(angle) }
+  }
+
+  function pts(radius: number) {
+    return Array.from({ length: N }, (_, i) => point(i, radius))
+      .map(p => `${p.x},${p.y}`).join(' ')
+  }
+
+  const scores = STROKE_ORDER.map(key => {
+    const ref = STROKE_REF[key]
+    const best = ref.events
+      .map(ev => parseSecs(times[`${course}-${ev}`] || ''))
+      .filter(s => s > 0)
+    if (!best.length) return 0
+    const t = Math.min(...best)
+    return Math.max(0, Math.min(1, (ref.slow - t) / (ref.slow - ref.fast)))
+  })
+
+  const dataPoints = scores.map((s, i) => point(i, s * R))
+  const dataPoly   = dataPoints.map(p => `${p.x},${p.y}`).join(' ')
+
+  const hasAny = scores.some(s => s > 0)
+
+  return (
+    <div className="specialty-card">
+      <h3 className="specialty-title">Specialty</h3>
+      <div className="specialty-chart">
+        <svg viewBox={`0 0 ${SIZE} ${SIZE}`} width={SIZE} height={SIZE}>
+          {/* Grid rings */}
+          {[0.25, 0.5, 0.75, 1].map(frac => (
+            <polygon key={frac} points={pts(R * frac)}
+              fill="none" stroke="rgba(0,40,85,0.12)" strokeWidth="1" />
+          ))}
+          {/* Axis lines */}
+          {STROKE_ORDER.map((_, i) => {
+            const p = point(i, R)
+            return <line key={i} x1={CX} y1={CY} x2={p.x} y2={p.y}
+              stroke="rgba(0,40,85,0.12)" strokeWidth="1" />
+          })}
+          {/* Data polygon */}
+          {hasAny && (
+            <polygon points={dataPoly}
+              fill="rgba(0,100,200,0.25)" stroke="#1d4ed8" strokeWidth="2" />
+          )}
+          {/* Axis labels */}
+          {STROKE_ORDER.map((key, i) => {
+            const p = point(i, R + 16)
+            return (
+              <text key={key} x={p.x} y={p.y}
+                textAnchor="middle" dominantBaseline="middle"
+                fontSize="11" fontWeight="600" fill="#334155">
+                {STROKE_REF[key].label}
+              </text>
+            )
+          })}
+        </svg>
+        {!hasAny && <p className="specialty-empty">Add times to see your specialty.</p>}
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const [username,    setUsername]    = useState('')
@@ -472,7 +560,7 @@ export default function Dashboard() {
               }
             </div>
             <div className="dash-profile-meta">
-              <h1 className="dash-welcome">Welcome, {fullName || username || '…'}</h1>
+              <h1 className="dash-welcome">{fullName || username || '…'}</h1>
               <p className="dash-profile-sub">
                 {[
                   age !== null ? `Age ${age}` : null,
@@ -533,6 +621,11 @@ export default function Dashboard() {
             )}
           </div>
         )}
+
+        {/* ── Specialty + Times row ── */}
+        <div className="dash-content-row">
+          <SpecialtyChart times={times} course={course} />
+        </div>
 
         {/* ── Times Panel ── */}
         <section className="times-panel">

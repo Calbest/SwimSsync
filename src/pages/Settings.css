@@ -67,26 +67,23 @@
 /* ── Tab nav ── */
 .settings-tabs {
   display: flex;
-  gap: 8px;
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 6px;
-  box-shadow: 0 1px 4px rgba(0,40,85,0.08);
+  gap: 10px;
 }
 
 .settings-tab {
   flex: 1;
-  padding: 10px 16px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: #64748b;
+  padding: 11px 16px;
+  border: 2px solid #002855;
+  border-radius: 10px;
+  background: #c8d8e8;
+  color: #002855;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
+  letter-spacing: 0.2px;
 }
-.settings-tab:hover { background: #f0f6ff; color: #0f172a; }
+.settings-tab:hover { background: #b0c8e0; }
 .settings-tab.active {
   background: #002855;
   color: #ffffff;
