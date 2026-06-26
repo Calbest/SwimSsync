@@ -239,12 +239,11 @@ export default function Import() {
               <li>Copy (Ctrl+C / Cmd+C), then paste in the box below.</li>
               <li className="import-step-note">
                 <AlertTriangle size={13} />
-                Swimcloud's Best Times comparison table puts SCY and LCM on the <strong>same row</strong>,
-                which can confuse the parser. The individual Times tab (one row per swim) works much better.
+                <span>Swimcloud's Best Times comparison table puts SCY and LCM on the <strong>same row</strong>, which can confuse the parser. The individual Times tab (one row per swim) works much better.</span>
               </li>
               <li className="import-step-note">
                 <AlertTriangle size={13} />
-                Your Swimcloud profile must be <strong>public</strong>, or you must be logged in, to see times.
+                <span>Your Swimcloud profile must be <strong>public</strong>, or you must be logged in, to see times.</span>
               </li>
             </ol>
           )}
