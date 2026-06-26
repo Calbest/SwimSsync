@@ -115,7 +115,7 @@ function ReviewsCarousel({ refresh }: { refresh: number }) {
 
   return (
     <div className="reviews-section">
-      <h3 className="reviews-title">★★★★★ What People Are Saying</h3>
+      <h3 className="reviews-title">What People Are Saying</h3>
       <div className="reviews-scroll">
         {reviews.map(r => (
           <div key={r.id} className="reviews-card">
