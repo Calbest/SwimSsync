@@ -291,7 +291,6 @@ function App() {
         </div>
         <div className="hero-visual">
           <img src="/Hero.jpg" alt="Swimmer in pool" className="hero-img" />
-          <img src="/swimmer.svg" alt="Swimmer icon" className="hero-swimmer-svg" />
         </div>
       </section>
       <WaveDivider fill="#f0f7ff" />
