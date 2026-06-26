@@ -399,6 +399,7 @@ export default function Dashboard() {
 
       {/* ── Sidebar ── */}
       <aside className="dash-sidebar">
+        {/* Profile + settings gear pinned at top */}
         <div className="dash-profile">
           <div className="dash-avatar">
             {avatarUrl
@@ -411,10 +412,14 @@ export default function Dashboard() {
             {age !== null && <span className="dash-age">Age {age}</span>}
             {gender && <span className={`dash-gender dash-gender--${gender}`}>{gender === 'male' ? 'Male' : 'Female'}</span>}
           </div>
+          <button className="dash-settings-icon" onClick={() => { playNavigate(); navigate('/settings') }} title="Settings">
+            <Settings size={15} />
+            <span>Settings</span>
+          </button>
         </div>
 
-        {/* TODO: Add nav links here (Calendar, Meet Comparison, etc.) */}
-        <div className="dash-nav-placeholder" />
+        {/* Scrollable nav */}
+        <nav className="dash-nav-scroll">
 
         <button className="dash-compare" onClick={() => { playNavigate(); navigate('/compare') }}>
           <span className="dash-compare-icon">⇌</span>
@@ -461,13 +466,9 @@ export default function Dashboard() {
           <span>Import Times</span>
         </button>
 
-        <button className="dash-settings" onClick={() => { playNavigate(); navigate('/settings') }}>
-          <Settings size={16} />
-          <span>Settings</span>
-        </button>
+        </nav>
 
-
-
+        {/* Sign out pinned at bottom */}
         <button className="dash-signout" onClick={() => { playClick(); handleSignOut() }}>
           <LogOut size={16} />
           <span>Sign out</span>

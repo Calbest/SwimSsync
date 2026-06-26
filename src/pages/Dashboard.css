@@ -95,7 +95,38 @@ button:active { transform: scale(0.96) !important; }
 .dash-gender--male   { background: rgba(0,100,200,0.2); color: #90c5ff; border: 1px solid rgba(0,100,200,0.3); }
 .dash-gender--female { background: rgba(220,80,180,0.2); color: #f9a8e8; border: 1px solid rgba(220,80,180,0.3); }
 
-.dash-nav-placeholder { flex: 1; }
+/* Scrollable nav fills available space */
+.dash-nav-scroll {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 12px 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+.dash-nav-scroll::-webkit-scrollbar { width: 4px; }
+.dash-nav-scroll::-webkit-scrollbar-track { background: transparent; }
+.dash-nav-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+/* Settings shortcut inside profile block */
+.dash-settings-icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.8);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  margin-top: 4px;
+}
+.dash-settings-icon:hover { background: rgba(255,255,255,0.18); color: #ffffff; }
 
 .dash-compare {
   display: flex;
