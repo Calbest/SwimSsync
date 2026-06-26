@@ -539,11 +539,8 @@ p { margin: 0; }
   display: block;
 }
 
-/* Caleb: portrait iPhone photo shot sideways — rotate right to correct */
 .creators-photo--caleb {
-  object-position: 60% 20%;
-  transform: rotate(90deg) scale(1.35);
-  transform-origin: center center;
+  object-position: center 20%;
   filter: brightness(1.18) contrast(1.12) saturate(1.08);
 }
 
