@@ -570,11 +570,10 @@ export default function Dashboard() {
 
         {/* ── Times Panel ── */}
         <section className="times-panel">
-          <div className="times-panel-header">
-            <h2 className="times-panel-title">Personal Bests</h2>
-            <span className="times-panel-subtitle">Your fastest times by event</span>
-          </div>
           <div className="times-toolbar">
+            <div className="times-toolbar-left">
+              <span className="times-panel-title">Personal Bests</span>
+            </div>
             <div className="times-tabs">
               <button
                 className={`times-tab${course === 'SCY' ? ' active' : ''}`}
