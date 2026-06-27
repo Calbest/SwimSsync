@@ -131,7 +131,7 @@ type Times = Record<string, string>
 
 interface AppNotif {
   id: string
-  type: 'pb' | 'standard' | 'stale' | 'tip' | 'goal' | 'motivational' | 'birthday' | 'monthly'
+  type: 'pb' | 'standard' | 'stale' | 'tip' | 'goal' | 'motivational' | 'birthday' | 'monthly' | 'improvement'
   title: string
   message: string
 }
@@ -379,6 +379,7 @@ const NOTIF_ICONS: Record<AppNotif['type'], typeof Bell> = {
   motivational: Star,
   birthday:     Star,
   monthly:      CalendarCheck,
+  improvement:  TrendingUp,
 }
 
 const NOTIF_COLORS: Record<AppNotif['type'], string> = {
@@ -388,6 +389,7 @@ const NOTIF_COLORS: Record<AppNotif['type'], string> = {
   tip:          '#0891b2',
   goal:         '#7c3aed',
   motivational: '#0369a1',
+  improvement:  '#16a34a',
   birthday:     '#db2777',
   monthly:      '#0891b2',
 }
@@ -463,7 +465,7 @@ export default function Dashboard() {
   const [showNotifs,  setShowNotifs]  = useState(false)
   const [timeHistory, setTimeHistory] = useState<Record<string, { date: string; time: string }[]>>({})
   const [dob,         setDob]         = useState('')
-  const [notifPrefs,     setNotifPrefs]     = useState<Record<string, boolean>>({ motivationalQuotes: true })
+  const [notifPrefs,     setNotifPrefs]     = useState<Record<string, boolean>>({ motivationalQuotes: true, improvementBanner: true })
   const [goals,          setGoals]          = useState<Goal[]>([])
   const [calAttendance,  setCalAttendance]  = useState<Record<string, unknown>>({})
   const [followCounts,   setFollowCounts]   = useState({ followers: 0, following: 0 })
@@ -479,7 +481,10 @@ export default function Dashboard() {
   const [importBannerDismissed, setImportBannerDismissed] = useState(
     () => localStorage.getItem('sw_import_banner_dismissed') === '1'
   )
-  const [improveBannerDismissed, setImproveBannerDismissed] = useState(false)
+  const [dismissedImproveSec, setDismissedImproveSec] = useState<number>(() => {
+    try { return JSON.parse(localStorage.getItem('sw_improve_dismissed') ?? '-1') as number }
+    catch { return -1 }
+  })
   const [showTC,          setShowTC]          = useState(false)
   const [avatarSheet,     setAvatarSheet]     = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
@@ -555,7 +560,20 @@ export default function Dashboard() {
     })
   }, [navigate])
 
-  const notifications = generateNotifications(times, timeHistory, notifPrefs, dob, fullName, goals, calAttendance)
+  const bestImprovement = getBestImprovement(timeHistory)
+  const rawNotifications = generateNotifications(times, timeHistory, notifPrefs, dob, fullName, goals, calAttendance)
+  const improvementNotif: AppNotif | null =
+    bestImprovement && notifPrefs.improvementBanner !== false
+      ? {
+          id: `improvement-${bestImprovement.key}`,
+          type: 'improvement',
+          title: 'Career improvement',
+          message: `You've improved ${bestImprovement.improveSec.toFixed(2)}s in ${bestImprovement.label}. ${pickPhrase(bestImprovement.key)}`,
+        }
+      : null
+  const notifications = improvementNotif
+    ? [improvementNotif, ...rawNotifications]
+    : rawNotifications
 
   // Birthday notifications for followed swimmers
   const today = new Date()
@@ -613,8 +631,6 @@ export default function Dashboard() {
   function timeKey(c: Course, eventId: string) {
     return `${c}-${eventId}`
   }
-
-  const bestImprovement = getBestImprovement(timeHistory)
 
   return (
     <>
@@ -919,7 +935,7 @@ export default function Dashboard() {
         )}
 
         {/* ── Improvement Banner ── */}
-        {bestImprovement && !improveBannerDismissed && (
+        {bestImprovement && notifPrefs.improvementBanner !== false && bestImprovement.improveSec > dismissedImproveSec + 0.5 && (
           <div className="dash-improve-banner">
             <TrendingUp className="dash-improve-icon" size={22} />
             <div className="dash-improve-body">
@@ -929,7 +945,11 @@ export default function Dashboard() {
             <button className="dash-improve-view" onClick={() => { playNavigate(); navigate('/progress') }}>
               View Progress →
             </button>
-            <button className="dash-improve-close" onClick={() => setImproveBannerDismissed(true)} aria-label="Dismiss">
+            <button className="dash-improve-close" onClick={() => {
+              const sec = bestImprovement.improveSec
+              setDismissedImproveSec(sec)
+              localStorage.setItem('sw_improve_dismissed', JSON.stringify(sec))
+            }} aria-label="Dismiss">
               <X size={14} />
             </button>
           </div>

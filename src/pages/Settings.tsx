@@ -95,6 +95,7 @@ export default function Settings() {
     trainingTips:        false,
     newFeatures:         true,
     motivationalQuotes:  true,
+    improvementBanner:   true,
   })
   const [notifStatus, setNotifStatus] = useState<SaveStatus>('idle')
 
@@ -899,6 +900,7 @@ export default function Settings() {
               { key: 'trainingTips',     label: 'Training tips',              desc: 'Occasional tips on technique and race strategy' },
               { key: 'newFeatures',      label: 'New features & updates',     desc: 'Know when PaceBook adds something new' },
               { key: 'motivationalQuotes', label: 'Motivational quotes',       desc: 'Get an inspiring quote once or twice a week to keep you going' },
+              { key: 'improvementBanner',  label: 'Improvement banner',         desc: 'Show your biggest career time drop on the dashboard' },
             ] as { key: keyof typeof notifPrefs; label: string; desc: string }[]).map(({ key, label, desc }) => (
               <div key={key} className="notif-row">
                 <div className="notif-row-text">
