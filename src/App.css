@@ -416,7 +416,7 @@ p { margin: 0; }
   gap: 24px;
   align-items: flex-start;
   justify-content: center;
-  max-width: 1040px;
+  max-width: 1240px;
   width: 100%;
   padding: 0 16px;
 }
@@ -430,11 +430,11 @@ p { margin: 0; }
 }
 
 .uw-img-caption {
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 1.4px;
   text-transform: uppercase;
-  color: rgba(255, 255, 239, 0.55);
+  color: rgba(255, 255, 239, 0.70);
   margin: 0;
   text-align: center;
   width: 100%;
