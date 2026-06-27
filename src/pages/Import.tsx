@@ -396,29 +396,42 @@ export default function Import() {
     const user = sessionData.session?.user
     if (!user) { navigate('/'); return }
 
-    const mergedTimes: Record<string, string> = { ...(user.user_metadata?.times ?? {}) }
-    const mergedHistory: Record<string, SwimEntry[]> = { ...(user.user_metadata?.timeHistory ?? {}) }
+    // Read existing history for these events so we can merge without losing data
+    const { data: existingRows } = await supabase
+      .from('swim_data')
+      .select('event_key, history')
+      .eq('user_id', user.id)
+      .in('event_key', toSave.map(r => r.key))
 
-    for (const row of toSave) {
-      mergedTimes[row.key] = row.bestTime
-      const hist = [...(mergedHistory[row.key] ?? [])]
-      for (const entry of row.entries) {
-        if (!hist.some(e => e.date === entry.date && e.time === entry.time)) {
-          hist.push(entry)
-        }
-      }
-      mergedHistory[row.key] = hist
+    const existingMap: Record<string, SwimEntry[]> = {}
+    for (const row of existingRows ?? []) {
+      existingMap[row.event_key] = row.history as SwimEntry[]
     }
 
+    const upsertRows = toSave.map(row => {
+      const merged = [...(existingMap[row.key] ?? [])]
+      for (const entry of row.entries) {
+        if (!merged.some(e => e.date === entry.date && e.time === entry.time)) {
+          merged.push(entry)
+        }
+      }
+      const bestTime = merged.reduce((b, e) => toSec(e.time) < toSec(b.time) ? e : b).time
+      return {
+        user_id:    user.id,
+        event_key:  row.key,
+        best_time:  bestTime,
+        history:    merged,
+        updated_at: new Date().toISOString(),
+      }
+    })
+
     try {
-      const { error: saveErr } = await supabase.auth.updateUser({
-        data: { times: mergedTimes, timeHistory: mergedHistory },
-      })
-      if (saveErr) throw new Error(saveErr.message)
+      const { error } = await supabase.from('swim_data').upsert(upsertRows)
+      if (error) throw new Error(error.message)
     } catch (err) {
       setSaving(false)
       setParseError(
-        `Save failed: ${err instanceof Error ? err.message : 'network error'}. ` +
+        `Save failed: ${err instanceof Error ? err.message : 'unknown error'}. ` +
         `Check your connection and try again.`
       )
       return

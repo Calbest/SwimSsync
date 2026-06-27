@@ -512,8 +512,17 @@ export default function Dashboard() {
       setAvatarUrl(user.user_metadata?.avatar_url || '')
       setBannerType(user.user_metadata?.bannerType || 'default')
       setBannerValue(user.user_metadata?.bannerValue || '')
-      setTimes(user.user_metadata?.times || {})
-      setTimeHistory(user.user_metadata?.timeHistory || {})
+      supabase.from('swim_data').select('event_key, best_time, history')
+        .eq('user_id', user.id).then(({ data: rows }) => {
+          const t: Times = {}
+          const h: Record<string, { date: string; time: string }[]> = {}
+          for (const row of rows ?? []) {
+            t[row.event_key] = row.best_time
+            h[row.event_key] = row.history as { date: string; time: string }[]
+          }
+          setTimes(t)
+          setTimeHistory(h)
+        })
       if (user.user_metadata?.notifPrefs) setNotifPrefs(user.user_metadata.notifPrefs)
       setGoals(user.user_metadata?.goals || [])
       setCalAttendance(user.user_metadata?.calAttendance || {})
@@ -585,66 +594,77 @@ export default function Dashboard() {
     localStorage.setItem('sw_read_notifs', JSON.stringify([...next]))
   }
 
-  const persistTimes = useCallback((nextTimes: Times) => {
+  const persistTimes = useCallback((nextTimes: Times, prevTimes: Times) => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     setSaveStatus('saving')
     debounceRef.current = setTimeout(async () => {
-      const { error } = await supabase.auth.updateUser({ data: { times: nextTimes } })
-      if (error) { setSaveStatus('error'); return }
+      const { data: sd } = await supabase.auth.getSession()
+      const user = sd.session?.user
+      if (!user) { setSaveStatus('error'); return }
+
+      // Only upsert the key that changed
+      const changedKey = Object.keys(nextTimes).find(k => nextTimes[k] !== prevTimes[k])
+      if (changedKey) {
+        const { data: existing } = await supabase
+          .from('swim_data').select('history')
+          .eq('user_id', user.id).eq('event_key', changedKey).maybeSingle()
+        const hist = [...((existing?.history as { date: string; time: string }[]) ?? [])]
+        const today = new Date().toISOString().slice(0, 10)
+        const idx = hist.findIndex(e => e.date === today)
+        const entry = { date: today, time: nextTimes[changedKey] }
+        if (idx >= 0) hist[idx] = entry; else hist.push(entry)
+        const { error } = await supabase.from('swim_data').upsert({
+          user_id: user.id, event_key: changedKey,
+          best_time: nextTimes[changedKey], history: hist,
+          updated_at: new Date().toISOString(),
+        })
+        if (error) { setSaveStatus('error'); return }
+      }
+
       setSaveStatus('saved')
       playSave()
       setTimeout(() => setSaveStatus('idle'), 2000)
-      // Sync public profile so friends can see updated times
-      if (userIdRef.current) {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-          const meta = user.user_metadata ?? {}
-          const myProfile = {
-            id:           user.id,
-            username:     meta.username    || user.email || '',
-            full_name:    meta.full_name   || null,
-            avatar_url:   meta.avatar_url  || null,
-            gender:       meta.gender      || null,
-            club_team:    meta.club_team   || null,
-            high_school:  meta.high_school || null,
-            times:        nextTimes,
-            dob:          meta.dob         || null,
-            banner_type:  meta.bannerType  || null,
-            banner_value: meta.bannerValue || null,
-            updated_at:   new Date().toISOString(),
-          }
-          upsertProfile(myProfile)
 
-          // Detect new PRs and notify followers
-          const prevTimes: Record<string, string> = meta.times ?? {}
-          const prEvents: { key: string; label: string; newTime: string; oldTime?: string }[] = []
-          const EVENT_LABEL: Record<string, string> = {
-            'SCY-50-free':'50 Free SCY','SCY-100-free':'100 Free SCY','SCY-200-free':'200 Free SCY',
-            'SCY-500-free':'500 Free SCY','SCY-1000-free':'1000 Free SCY','SCY-1650-free':'1650 Free SCY',
-            'SCY-100-back':'100 Back SCY','SCY-200-back':'200 Back SCY',
-            'SCY-100-breast':'100 Breast SCY','SCY-200-breast':'200 Breast SCY',
-            'SCY-100-fly':'100 Fly SCY','SCY-200-fly':'200 Fly SCY',
-            'SCY-200-im':'200 IM SCY','SCY-400-im':'400 IM SCY',
-            'LCM-50-free':'50 Free LCM','LCM-100-free':'100 Free LCM','LCM-200-free':'200 Free LCM',
-            'LCM-400-free':'400 Free LCM','LCM-800-free':'800 Free LCM','LCM-1500-free':'1500 Free LCM',
-            'LCM-100-back':'100 Back LCM','LCM-200-back':'200 Back LCM',
-            'LCM-100-breast':'100 Breast LCM','LCM-200-breast':'200 Breast LCM',
-            'LCM-100-fly':'100 Fly LCM','LCM-200-fly':'200 Fly LCM',
-            'LCM-200-im':'200 IM LCM','LCM-400-im':'400 IM LCM',
-          }
-          for (const [key, newTime] of Object.entries(nextTimes)) {
-            const oldTime = prevTimes[key]
-            if (!oldTime && newTime) {
-              prEvents.push({ key, label: EVENT_LABEL[key] ?? key, newTime })
-            } else if (oldTime && newTime && newTime < oldTime) {
-              prEvents.push({ key, label: EVENT_LABEL[key] ?? key, newTime, oldTime })
-            }
-          }
-          if (prEvents.length > 0) {
-            writePRNotificationsForFollowers(myProfile, prEvents.slice(0, 5))
-          }
-        }
+      // Sync public profile so friends can see updated times
+      const meta = user.user_metadata ?? {}
+      const myProfile = {
+        id:           user.id,
+        username:     meta.username    || user.email || '',
+        full_name:    meta.full_name   || null,
+        avatar_url:   meta.avatar_url  || null,
+        gender:       meta.gender      || null,
+        club_team:    meta.club_team   || null,
+        high_school:  meta.high_school || null,
+        times:        nextTimes,
+        dob:          meta.dob         || null,
+        banner_type:  meta.bannerType  || null,
+        banner_value: meta.bannerValue || null,
+        updated_at:   new Date().toISOString(),
       }
+      upsertProfile(myProfile)
+
+      // Detect new PRs and notify followers
+      const EVENT_LABEL: Record<string, string> = {
+        'SCY-50-free':'50 Free SCY','SCY-100-free':'100 Free SCY','SCY-200-free':'200 Free SCY',
+        'SCY-500-free':'500 Free SCY','SCY-1000-free':'1000 Free SCY','SCY-1650-free':'1650 Free SCY',
+        'SCY-100-back':'100 Back SCY','SCY-200-back':'200 Back SCY',
+        'SCY-100-breast':'100 Breast SCY','SCY-200-breast':'200 Breast SCY',
+        'SCY-100-fly':'100 Fly SCY','SCY-200-fly':'200 Fly SCY',
+        'SCY-200-im':'200 IM SCY','SCY-400-im':'400 IM SCY',
+        'LCM-50-free':'50 Free LCM','LCM-100-free':'100 Free LCM','LCM-200-free':'200 Free LCM',
+        'LCM-400-free':'400 Free LCM','LCM-800-free':'800 Free LCM','LCM-1500-free':'1500 Free LCM',
+        'LCM-100-back':'100 Back LCM','LCM-200-back':'200 Back LCM',
+        'LCM-100-breast':'100 Breast LCM','LCM-200-breast':'200 Breast LCM',
+        'LCM-100-fly':'100 Fly LCM','LCM-200-fly':'200 Fly LCM',
+        'LCM-200-im':'200 IM LCM','LCM-400-im':'400 IM LCM',
+      }
+      const prEvents: { key: string; label: string; newTime: string; oldTime?: string }[] = []
+      for (const [k, newTime] of Object.entries(nextTimes)) {
+        const oldTime = prevTimes[k]
+        if (!oldTime && newTime) prEvents.push({ key: k, label: EVENT_LABEL[k] ?? k, newTime })
+        else if (oldTime && newTime && newTime < oldTime) prEvents.push({ key: k, label: EVENT_LABEL[k] ?? k, newTime, oldTime })
+      }
+      if (prEvents.length > 0) writePRNotificationsForFollowers(myProfile, prEvents.slice(0, 5))
     }, 700)
   }, [])
 
@@ -664,21 +684,9 @@ export default function Dashboard() {
     const key = timeKey(course, eventId)
     setTimes(prev => {
       const next = { ...prev, [key]: formatted }
-      persistTimes(next)
+      if (formatted && isValidTime(formatted)) persistTimes(next, prev)
       return next
     })
-    if (formatted && isValidTime(formatted)) {
-      setTimeHistory(prev => {
-        const arr = [...(prev[key] ?? [])]
-        const date = timeDate || 'unknown'
-        const idx = arr.findIndex(e => e.date === date)
-        if (idx >= 0) arr[idx] = { date, time: formatted }
-        else arr.push({ date, time: formatted })
-        const next = { ...prev, [key]: arr }
-        supabase.auth.updateUser({ data: { timeHistory: next } })
-        return next
-      })
-    }
   }
 
   return (

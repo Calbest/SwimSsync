@@ -350,24 +350,29 @@ export default function Progress() {
 
   useEffect(() => {
     setDataLoading(true)
-    supabase.auth.getUser().then(({ data }) => {
-      const user = data?.user
+    supabase.auth.getSession().then(async ({ data: sd }) => {
+      const user = sd.session?.user
       if (!user) { navigate('/'); return }
-      setHistory(user.user_metadata?.timeHistory ?? {})
-      setDashTimes(user.user_metadata?.times ?? {})
       setDob(user.user_metadata?.dob ?? '')
+      const { data: rows } = await supabase
+        .from('swim_data')
+        .select('event_key, best_time, history')
+        .eq('user_id', user.id)
+      const histMap: TimeHistory = {}
+      const timesMap: Times = {}
+      for (const row of rows ?? []) {
+        histMap[row.event_key]  = row.history as TimeEntry[]
+        timesMap[row.event_key] = row.best_time
+      }
+      setHistory(histMap)
+      setDashTimes(timesMap)
       setDataLoading(false)
     })
   }, [navigate])
 
-  // Always fetch fresh server data before writing, so we never overwrite
-  // entries that were saved from another page (e.g. Import) after this
-  // component mounted with stale local state.
-  async function fetchHistory(): Promise<TimeHistory> {
-    const { data } = await supabase.auth.getUser()
-    const h = data?.user?.user_metadata?.timeHistory ?? {}
-    setHistory(h)
-    return h
+  async function getUserId(): Promise<string | null> {
+    const { data } = await supabase.auth.getSession()
+    return data.session?.user.id ?? null
   }
 
   const groups  = course === 'SCY' ? SCY_GROUPS : course === 'LCM' ? LCM_GROUPS : SCM_GROUPS
@@ -400,19 +405,46 @@ export default function Progress() {
   async function addEntry() {
     if (!newTime.trim() || !newDate || !isValidTime(newTime)) return
     setNewTime('')
-    const fresh = await fetchHistory()
-    const next = { ...fresh, [key]: [...(fresh[key] ?? []), { date: newDate, time: newTime }] }
-    setHistory(next)
-    await supabase.auth.updateUser({ data: { timeHistory: next } })
+    const uid = await getUserId()
+    if (!uid) return
+    const { data: existing } = await supabase
+      .from('swim_data').select('history')
+      .eq('user_id', uid).eq('event_key', key).maybeSingle()
+    const merged: TimeEntry[] = [...((existing?.history as TimeEntry[]) ?? []),
+      { date: newDate, time: newTime }]
+    const bestTime = merged.reduce((b, e) =>
+      (toSec(e.time) ?? Infinity) < (toSec(b.time) ?? Infinity) ? e : b).time
+    await supabase.from('swim_data').upsert({
+      user_id: uid, event_key: key, best_time: bestTime,
+      history: merged, updated_at: new Date().toISOString(),
+    })
+    setHistory(prev => ({ ...prev, [key]: merged }))
+    setDashTimes(prev => ({ ...prev, [key]: bestTime }))
   }
 
   async function deleteEntry(sortedIdx: number) {
-    const fresh = await fetchHistory()
-    const arr = [...(fresh[key] ?? [])].sort((a, b) => a.date.localeCompare(b.date))
-    arr.splice(sortedIdx, 1)
-    const next = { ...fresh, [key]: arr }
-    setHistory(next)
-    await supabase.auth.updateUser({ data: { timeHistory: next } })
+    const uid = await getUserId()
+    if (!uid) return
+    const { data: existing } = await supabase
+      .from('swim_data').select('history')
+      .eq('user_id', uid).eq('event_key', key).maybeSingle()
+    const sorted = [...((existing?.history as TimeEntry[]) ?? [])]
+      .sort((a, b) => a.date.localeCompare(b.date))
+    sorted.splice(sortedIdx, 1)
+    if (sorted.length === 0) {
+      await supabase.from('swim_data').delete()
+        .eq('user_id', uid).eq('event_key', key)
+      setHistory(prev => { const n = { ...prev }; delete n[key]; return n })
+      setDashTimes(prev => { const n = { ...prev }; delete n[key]; return n })
+      return
+    }
+    const bestTime = sorted.reduce((b, e) =>
+      (toSec(e.time) ?? Infinity) < (toSec(b.time) ?? Infinity) ? e : b).time
+    await supabase.from('swim_data').update({
+      history: sorted, best_time: bestTime, updated_at: new Date().toISOString(),
+    }).eq('user_id', uid).eq('event_key', key)
+    setHistory(prev => ({ ...prev, [key]: sorted }))
+    setDashTimes(prev => ({ ...prev, [key]: bestTime }))
   }
 
   return (
