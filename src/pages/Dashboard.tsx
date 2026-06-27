@@ -125,20 +125,32 @@ type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
 interface AppNotif {
   id: string
-  type: 'pb' | 'standard' | 'stale' | 'tip' | 'goal' | 'motivational'
+  type: 'pb' | 'standard' | 'stale' | 'tip' | 'goal' | 'motivational' | 'birthday'
   title: string
   message: string
 }
 
 const MOTIVATIONAL_QUOTES = [
-  { title: 'Keep pushing', message: '"The water doesn\'t care how tired you are. Get in and swim." — Unknown' },
-  { title: 'One stroke at a time', message: '"The race is long, but so is the lane. Trust your training." — Unknown' },
-  { title: 'Champions are made at practice', message: '"You don\'t rise to the level of competition, you fall to the level of your training." — Unknown' },
-  { title: 'Motivation for the week', message: '"Pain is temporary. Glory lasts forever. And PRs last until you drop another one." — Unknown' },
-  { title: 'Believe in yourself', message: '"The only swimmer you need to beat is the one you were yesterday." — Unknown' },
-  { title: 'Stay consistent', message: '"Showing up to practice on the days you don\'t want to is what separates good from great." — Unknown' },
-  { title: 'Race to your potential', message: '"Swim fast, rest later. You\'ve got a lifetime for sleep — only a few years to race your best." — Unknown' },
-  { title: 'Trust the process', message: '"Every lap, every rep, every early morning is a deposit in the bank of race day." — Unknown' },
+  { title: 'Hit the water.',          message: 'The lane doesn\'t care how you feel. Get in. Move. You can rest when the set is done.' },
+  { title: 'Every 50 counts.',        message: 'Not just race day. Every interval, every turn, every push off the wall — it all adds up.' },
+  { title: 'Move. Breathe. Repeat.',  message: 'That\'s the whole game. Show up, do the work, recover. Then do it again tomorrow.' },
+  { title: 'The wall is the finish.', message: 'Not three feet before it. Swim through to your fingertips. Finish every single length.' },
+  { title: 'Close your rings.',       message: 'Attendance is half the battle. You can\'t drop time from the locker room. Get in the water.' },
+  { title: 'Splits don\'t lie.',      message: 'The clock shows exactly how hard you went out and where you faded. Use it. Adjust. Get faster.' },
+  { title: 'The morning is yours.',   message: 'While most people are still asleep, you\'re putting in the work. That gap closes on race day.' },
+  { title: 'One more rep.',           message: 'When the set feels done, do one more. That extra effort is what separates your training from everyone else\'s.' },
+  { title: 'Rest is earned.',         message: 'You don\'t skip the hard sets to get to the rest. You earn the rest by finishing the hard sets.' },
+  { title: 'Turn faster.',            message: 'A tenth of a second on every turn is two seconds in a 200. The race is won and lost on the walls.' },
+  { title: 'Trust the taper.',        message: 'You\'ve done the work. Now let your body absorb it. Trust the process — the race will show.' },
+  { title: 'Hold your stroke.',       message: 'When you\'re tired is when technique matters most. Don\'t let form fall apart in the last 25.' },
+  { title: 'You set the pace.',       message: 'No one else decides how fast you go. You do. Own it from the first stroke.' },
+  { title: 'Track every swim.',       message: 'The data doesn\'t lie. Log your times and you\'ll see the pattern — effort in, improvement out.' },
+  { title: 'Uncomfortable is good.', message: 'If the set feels easy, you\'re not adapting. Growth lives outside your comfort zone.' },
+  { title: 'Stand up straight.',      message: 'Posture on the block, posture in the water. Race day starts before the gun fires.' },
+  { title: 'Race your own race.',     message: 'Don\'t look left. Don\'t look right. Your lane, your splits, your race.' },
+  { title: 'Drop the excuses.',       message: 'Tired? So is everyone else. Cold water? Same temperature for every swimmer. Get after it.' },
+  { title: 'Back half is where it\'s won.', message: 'Anyone can go out fast. The swimmers who go faster on the back half — those are the ones who train for it.' },
+  { title: 'Show up anyway.',         message: 'The best practice you ever do is the one you almost didn\'t go to. Go.' },
 ]
 
 const MOTIVATIONAL_KEY = 'sw_last_motivational'
@@ -164,13 +176,56 @@ function parseSeconds(t: string): number {
   return parseFloat(t)
 }
 
+function getAgeGroup(age: number): string {
+  if (age <= 10) return '10 & Under'
+  if (age <= 12) return '11-12'
+  if (age <= 14) return '13-14'
+  if (age <= 16) return '15-16'
+  if (age <= 18) return '17-18'
+  return 'Senior'
+}
+
+function birthdayNotif(dob: string, name: string): AppNotif | null {
+  if (!dob) return null
+  const today = new Date()
+  const birth = new Date(dob + 'T12:00:00')
+  const isBirthday =
+    today.getMonth() === birth.getMonth() &&
+    today.getDate()  === birth.getDate()
+  if (!isBirthday) return null
+
+  const age = today.getFullYear() - birth.getFullYear()
+  const prevAge = age - 1
+  const prevGroup = getAgeGroup(prevAge)
+  const newGroup  = getAgeGroup(age)
+  const ageGroupChanged = prevGroup !== newGroup
+
+  const first = name.trim().split(' ')[0] || 'Swimmer'
+  const msg = ageGroupChanged
+    ? `Happy Birthday, ${first}! You're now ${age}. Your qualifying standards have updated to the ${newGroup} age group — check Qualifications to see your new cuts.`
+    : `Happy Birthday, ${first}! You're ${age} today. Keep training hard — another great season ahead! 🎉`
+
+  return {
+    id: `birthday-${dob}`,
+    type: 'birthday',
+    title: `Happy Birthday! 🎂`,
+    message: msg,
+  }
+}
+
 function generateNotifications(
   times: Times,
   timeHistory: Record<string, { date: string; time: string }[]>,
   notifPrefs: Record<string, boolean>,
+  dob: string,
+  fullName: string,
 ): AppNotif[] {
   const notifs: AppNotif[] = []
   const today = new Date()
+
+  // Birthday (always shown at top when it's their birthday)
+  const bday = birthdayNotif(dob, fullName)
+  if (bday) notifs.unshift(bday)
 
   // Stale time warnings
   Object.entries(timeHistory).forEach(([key, entries]) => {
@@ -245,6 +300,7 @@ const NOTIF_ICONS: Record<AppNotif['type'], typeof Bell> = {
   tip:          Bell,
   goal:         Target,
   motivational: Star,
+  birthday:     Star,
 }
 
 const NOTIF_COLORS: Record<AppNotif['type'], string> = {
@@ -254,6 +310,7 @@ const NOTIF_COLORS: Record<AppNotif['type'], string> = {
   tip:          '#0891b2',
   goal:         '#7c3aed',
   motivational: '#0369a1',
+  birthday:     '#db2777',
 }
 
 function calcAge(dob: string): number | null {
@@ -307,6 +364,7 @@ export default function Dashboard() {
   const [showNotifs,  setShowNotifs]  = useState(false)
   const [timeHistory, setTimeHistory] = useState<Record<string, { date: string; time: string }[]>>({})
   const [timeDate,    setTimeDate]    = useState(new Date().toISOString().slice(0, 10))
+  const [dob,         setDob]         = useState('')
   const [notifPrefs,  setNotifPrefs]  = useState<Record<string, boolean>>({ motivationalQuotes: true })
   const [readIds,     setReadIds]     = useState<Set<string>>(() => {
     try { return new Set(JSON.parse(localStorage.getItem('sw_read_notifs') ?? '[]')) }
@@ -359,6 +417,7 @@ export default function Dashboard() {
       setUsername(user.user_metadata?.username || user.email || 'Swimmer')
       setFullName(user.user_metadata?.full_name || '')
       setGender(user.user_metadata?.gender || '')
+      setDob(user.user_metadata?.dob || '')
       setAge(calcAge(user.user_metadata?.dob || ''))
       setAvatarUrl(user.user_metadata?.avatar_url || '')
       setBannerType(user.user_metadata?.bannerType || 'default')
@@ -369,7 +428,7 @@ export default function Dashboard() {
     })
   }, [navigate])
 
-  const notifications = generateNotifications(times, timeHistory, notifPrefs)
+  const notifications = generateNotifications(times, timeHistory, notifPrefs, dob, fullName)
   const unreadCount = notifications.filter(n => !readIds.has(n.id)).length
 
   function markAllRead() {
@@ -415,7 +474,7 @@ export default function Dashboard() {
       persistTimes(next)
       return next
     })
-    if (formatted) {
+    if (formatted && isValidTime(formatted)) {
       setTimeHistory(prev => {
         const arr = [...(prev[key] ?? [])]
         const date = timeDate || 'unknown'
@@ -734,6 +793,7 @@ export default function Dashboard() {
                 className={`stroke-group${stroke === 'Relays' ? ' stroke-group--relay' : ''}`}
               >
                 <h3 className="stroke-heading">{stroke}</h3>
+                <div className={stroke === 'Relays' ? 'stroke-relay-events' : undefined}>
                 {events.map(({ id, label }) => (
                   <div key={id} className="event-row">
                     <span className="event-label">{label}</span>
@@ -751,6 +811,7 @@ export default function Dashboard() {
                     )}
                   </div>
                 ))}
+                </div>
               </div>
             ))}
           </div>

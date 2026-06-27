@@ -342,6 +342,8 @@
   box-shadow: 0 0 0 3px rgba(0,180,216,0.12);
 }
 .prog-add-time::placeholder { color: #94a3b8; font-weight: 400; font-size: 12px; }
+.prog-add-time--error { border-color: #ef4444 !important; background: #fef2f2 !important; }
+.prog-add-time-hint { font-size: 11px; color: #ef4444; margin-top: 4px; display: block; }
 
 .prog-add-btn {
   display: flex;

@@ -77,6 +77,13 @@ function formatTimeDigits(raw: string): string {
   }
 }
 
+function isValidTime(value: string): boolean {
+  if (value.length <= 2) return true
+  const match = value.match(/(?:^|:)(\d{2})\./)
+  if (!match) return true
+  return parseInt(match[1], 10) <= 59
+}
+
 // ─── SVG Chart ──────────────────────────────────────────────────────────────
 
 const VW = 640, VH = 280
@@ -366,7 +373,7 @@ export default function Progress() {
     : null
 
   async function addEntry() {
-    if (!newTime.trim() || !newDate) return
+    if (!newTime.trim() || !newDate || !isValidTime(newTime)) return
     const next = { ...history, [key]: [...(history[key] ?? []), { date: newDate, time: newTime }] }
     setHistory(next)
     setNewTime('')
@@ -544,17 +551,20 @@ export default function Progress() {
               <div className="prog-add-field">
                 <label className="prog-add-label">Time</label>
                 <input
-                  className="prog-add-time"
+                  className={`prog-add-time${newTime && !isValidTime(newTime) ? ' prog-add-time--error' : ''}`}
                   placeholder="type digits, e.g. 15234"
                   value={newTime}
                   onChange={e => setNewTime(formatTimeDigits(e.target.value))}
                   onKeyDown={e => { if (e.key === 'Enter') addEntry() }}
                 />
+                {newTime && !isValidTime(newTime) && (
+                  <span className="prog-add-time-hint">Seconds can't exceed 59</span>
+                )}
               </div>
               <button
                 className="prog-add-btn"
                 onClick={addEntry}
-                disabled={!newTime.trim() || !newDate}
+                disabled={!newTime.trim() || !newDate || !isValidTime(newTime)}
               >
                 <Plus size={15} />
                 Add Entry

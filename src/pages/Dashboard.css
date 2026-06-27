@@ -949,12 +949,17 @@ button:active { transform: scale(0.96) !important; }
 }
 
 .stroke-group--relay {
-  grid-column: 1 / -1;
-  border-right: none;
+  grid-column: span 2;
 }
 
 .stroke-group--relay .event-row {
-  max-width: 260px;
+  max-width: none;
+}
+
+.stroke-group--relay .stroke-relay-events {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
 }
 
 .stroke-heading {

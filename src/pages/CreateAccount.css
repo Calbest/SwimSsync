@@ -1,8 +1,130 @@
 .auth-page {
+  position: relative;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #001a3d 0%, #002855 55%, #003d80 100%);
+  background: #001020;
+  overflow: hidden;
+}
+
+/* Pool lane stripes */
+.auth-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 74px,
+      rgba(0, 140, 210, 0.22) 74px,
+      rgba(0, 140, 210, 0.22) 78px,
+      transparent 78px,
+      transparent 152px,
+      rgba(0, 80, 160, 0.10) 152px,
+      rgba(0, 80, 160, 0.10) 154px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 28, 70, 0.55) 0px,
+      rgba(0, 28, 70, 0.55) 76px,
+      rgba(0, 45, 100, 0.30) 76px,
+      rgba(0, 45, 100, 0.30) 152px
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Caustic light shimmer */
+.auth-page::after {
+  content: '';
+  position: absolute;
+  inset: -60% -40%;
+  background:
+    radial-gradient(ellipse 340px 200px at 30% 40%, rgba(0, 180, 230, 0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 280px 160px at 70% 60%, rgba(0, 160, 220, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 200px 300px at 55% 25%, rgba(40, 200, 255, 0.05) 0%, transparent 70%);
+  animation: auth-caustic 7s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes auth-caustic {
+  0%   { transform: translate(0, 0) scale(1); opacity: 0.7; }
+  33%  { transform: translate(4%, 3%) scale(1.05); opacity: 1; }
+  66%  { transform: translate(-3%, 5%) scale(0.95); opacity: 0.8; }
+  100% { transform: translate(2%, -3%) scale(1.02); opacity: 0.9; }
+}
+
+/* Lane-rope float markers */
+.auth-pool-lanes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.auth-pool-lane-rope {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 14px 0;
+}
+
+.auth-pool-lane-rope::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 1px;
+  left: 50%;
+  background: rgba(0, 160, 220, 0.15);
+}
+
+.auth-lane-float {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Bubbles */
+.auth-bubbles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.auth-bubble {
+  position: absolute;
+  bottom: -20px;
+  border-radius: 50%;
+  background: rgba(100, 200, 255, 0.18);
+  border: 1px solid rgba(150, 220, 255, 0.25);
+  animation: auth-rise linear infinite;
+}
+
+@keyframes auth-rise {
+  0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  10%  { opacity: 1; }
+  85%  { opacity: 0.6; }
+  100% { transform: translateY(-110vh) translateX(var(--drift, 20px)) scale(0.6); opacity: 0; }
+}
+
+/* Ensure content sits above the background layers */
+.auth-page > .navbar,
+.auth-page > .auth-main {
+  position: relative;
+  z-index: 1;
 }
 
 .auth-main {
