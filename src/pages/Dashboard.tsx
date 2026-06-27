@@ -718,6 +718,17 @@ export default function Dashboard() {
           }>
             <div className="dash-banner-actions">
               <button
+                className="dash-help-btn"
+                onClick={() => {
+                  localStorage.removeItem('sw_onboarded')
+                  setShowOnboarding(true)
+                }}
+                aria-label="Help / Tour"
+                title="Replay tour"
+              >
+                ?
+              </button>
+              <button
                 className="dash-bell-btn"
                 onClick={() => { setShowNotifs(s => !s); if (!showNotifs) markAllRead() }}
                 aria-label="Notifications"

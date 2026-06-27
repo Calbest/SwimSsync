@@ -616,6 +616,25 @@ button:active { transform: scale(0.96) !important; }
 }
 
 /* ── Bell button ── */
+.dash-help-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  border: 1.5px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.8);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.dash-help-btn:hover { background: rgba(255,255,255,0.22); color: #fff; }
+
 .dash-bell-btn {
   position: relative;
   width: 42px;
