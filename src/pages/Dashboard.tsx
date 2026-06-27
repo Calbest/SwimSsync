@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Pencil, Check, User, LogOut, Settings, Trophy, Target, Upload, TrendingUp, X, CalendarCheck, Bell, Star, Clock, Zap, Film } from 'lucide-react'
 import TimeConverterPopup from '../components/TimeConverterPopup'
@@ -58,11 +58,11 @@ const LCM_EVENTS: StrokeGroup[] = [
   {
     stroke: 'Relays',
     events: [
-      { id: 'relay-4x50-free',    label: '4×50 Free' },
-      { id: 'relay-4x100-free',   label: '4×100 Free' },
-      { id: 'relay-4x200-free',   label: '4×200 Free' },
-      { id: 'relay-4x100-medley', label: '4×100 Medley' },
-      { id: 'relay-4x200-medley', label: '4×200 Medley' },
+      { id: 'relay-4x50-free',    label: '4Ã—50 Free' },
+      { id: 'relay-4x100-free',   label: '4Ã—100 Free' },
+      { id: 'relay-4x200-free',   label: '4Ã—200 Free' },
+      { id: 'relay-4x100-medley', label: '4Ã—100 Medley' },
+      { id: 'relay-4x200-medley', label: '4Ã—200 Medley' },
     ],
   },
 ]
@@ -114,10 +114,10 @@ const SCY_EVENTS: StrokeGroup[] = [
   {
     stroke: 'Relays',
     events: [
-      { id: 'relay-4x50-free',    label: '4×50 Free' },
-      { id: 'relay-4x100-free',   label: '4×100 Free' },
-      { id: 'relay-4x200-free',   label: '4×200 Free' },
-      { id: 'relay-4x100-medley', label: '4×100 Medley' },
+      { id: 'relay-4x50-free',    label: '4Ã—50 Free' },
+      { id: 'relay-4x100-free',   label: '4Ã—100 Free' },
+      { id: 'relay-4x200-free',   label: '4Ã—200 Free' },
+      { id: 'relay-4x100-medley', label: '4Ã—100 Medley' },
     ],
   },
 ]
@@ -135,7 +135,7 @@ interface AppNotif {
 
 const MOTIVATIONAL_QUOTES = [
   { title: 'Hit the water.',          message: 'The lane doesn\'t care how you feel. Get in. Move. You can rest when the set is done.' },
-  { title: 'Every 50 counts.',        message: 'Not just race day. Every interval, every turn, every push off the wall — it all adds up.' },
+  { title: 'Every 50 counts.',        message: 'Not just race day. Every interval, every turn, every push off the wall â€” it all adds up.' },
   { title: 'Move. Breathe. Repeat.',  message: 'That\'s the whole game. Show up, do the work, recover. Then do it again tomorrow.' },
   { title: 'The wall is the finish.', message: 'Not three feet before it. Swim through to your fingertips. Finish every single length.' },
   { title: 'Close your rings.',       message: 'Attendance is half the battle. You can\'t drop time from the locker room. Get in the water.' },
@@ -144,15 +144,15 @@ const MOTIVATIONAL_QUOTES = [
   { title: 'One more rep.',           message: 'When the set feels done, do one more. That extra effort is what separates your training from everyone else\'s.' },
   { title: 'Rest is earned.',         message: 'You don\'t skip the hard sets to get to the rest. You earn the rest by finishing the hard sets.' },
   { title: 'Turn faster.',            message: 'A tenth of a second on every turn is two seconds in a 200. The race is won and lost on the walls.' },
-  { title: 'Trust the taper.',        message: 'You\'ve done the work. Now let your body absorb it. Trust the process — the race will show.' },
+  { title: 'Trust the taper.',        message: 'You\'ve done the work. Now let your body absorb it. Trust the process â€” the race will show.' },
   { title: 'Hold your stroke.',       message: 'When you\'re tired is when technique matters most. Don\'t let form fall apart in the last 25.' },
   { title: 'You set the pace.',       message: 'No one else decides how fast you go. You do. Own it from the first stroke.' },
-  { title: 'Track every swim.',       message: 'The data doesn\'t lie. Log your times and you\'ll see the pattern — effort in, improvement out.' },
+  { title: 'Track every swim.',       message: 'The data doesn\'t lie. Log your times and you\'ll see the pattern â€” effort in, improvement out.' },
   { title: 'Uncomfortable is good.', message: 'If the set feels easy, you\'re not adapting. Growth lives outside your comfort zone.' },
   { title: 'Stand up straight.',      message: 'Posture on the block, posture in the water. Race day starts before the gun fires.' },
   { title: 'Race your own race.',     message: 'Don\'t look left. Don\'t look right. Your lane, your splits, your race.' },
   { title: 'Drop the excuses.',       message: 'Tired? So is everyone else. Cold water? Same temperature for every swimmer. Get after it.' },
-  { title: 'Back half is where it\'s won.', message: 'Anyone can go out fast. The swimmers who go faster on the back half — those are the ones who train for it.' },
+  { title: 'Back half is where it\'s won.', message: 'Anyone can go out fast. The swimmers who go faster on the back half â€” those are the ones who train for it.' },
   { title: 'Show up anyway.',         message: 'The best practice you ever do is the one you almost didn\'t go to. Go.' },
 ]
 
@@ -205,13 +205,13 @@ function birthdayNotif(dob: string, name: string): AppNotif | null {
 
   const first = name.trim().split(' ')[0] || 'Swimmer'
   const msg = ageGroupChanged
-    ? `Happy Birthday, ${first}! You're now ${age}. Your qualifying standards have updated to the ${newGroup} age group — check Qualifications to see your new cuts.`
-    : `Happy Birthday, ${first}! You're ${age} today. Keep training hard — another great season ahead! 🎉`
+    ? `Happy Birthday, ${first}! You're now ${age}. Your qualifying standards have updated to the ${newGroup} age group â€” check Qualifications to see your new cuts.`
+    : `Happy Birthday, ${first}! You're ${age} today. Keep training hard â€” another great season ahead! ðŸŽ‰`
 
   return {
     id: `birthday-${dob}`,
     type: 'birthday',
-    title: `Happy Birthday! 🎂`,
+    title: `Happy Birthday! ðŸŽ‚`,
     message: msg,
   }
 }
@@ -228,7 +228,7 @@ function goalAchievedNotifs(goals: Goal[], times: Times): AppNotif[] {
     .map(goal => ({
       id: `goal-achieved-${goal.id}`,
       type: 'goal' as const,
-      title: `Goal achieved — ${goal.eventLabel}`,
+      title: `Goal achieved â€” ${goal.eventLabel}`,
       message: `You hit your target of ${goal.targetTime} for the ${goal.eventLabel} (${goal.course}). Outstanding work!`,
     }))
 }
@@ -274,7 +274,7 @@ function monthlyReportNotif(calAttendance: Record<string, unknown>): AppNotif | 
     id: `monthly-report-${reportKey}`,
     type: 'monthly',
     title: `${monthName} attendance report`,
-    message: `${parts} — ${rate}% attendance rate across ${total} sessions.`,
+    message: `${parts} â€” ${rate}% attendance rate across ${total} sessions.`,
   }
 }
 
@@ -318,7 +318,7 @@ function generateNotifications(
     }
   })
 
-  // PB detection — most recent vs second-most-recent
+  // PB detection â€” most recent vs second-most-recent
   Object.entries(timeHistory).forEach(([key, entries]) => {
     if (!entries || entries.length < 2) return
     const sorted = [...entries].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -331,7 +331,7 @@ function generateNotifications(
       notifs.push({
         id: `pb-${key}`,
         type: 'pb',
-        title: `New personal best — ${label}`,
+        title: `New personal best â€” ${label}`,
         message: `You dropped ${drop}s on your ${label}. Great swim!`,
       })
     }
@@ -354,7 +354,7 @@ function generateNotifications(
       id: 'tip-set-goals',
       type: 'tip',
       title: 'Set your season goals',
-      message: 'Head to Goals and set target times for your key events so SwimSCPlan can track your progress.',
+      message: 'Head to Goals and set target times for your key events so SwimSync can track your progress.',
     })
   }
 
@@ -415,7 +415,7 @@ function formatTimeDigits(raw: string): string {
   }
 }
 
-// Returns true if the seconds portion of a formatted time is 00–59.
+// Returns true if the seconds portion of a formatted time is 00â€“59.
 function isValidTime(value: string): boolean {
   if (value.length <= 2) return true // still typing
   const match = value.match(/(?:^|:)(\d{2})\./)
@@ -615,7 +615,7 @@ export default function Dashboard() {
     )}
     <TimeConverterPopup isOpen={showTC} onClose={() => setShowTC(false)} />
 
-    {/* ── Avatar action sheet (Instagram-style) ── */}
+    {/* â”€â”€ Avatar action sheet (Instagram-style) â”€â”€ */}
     {avatarSheet && (
       <div className="dash-avatar-sheet-overlay" onClick={() => setAvatarSheet(false)}>
         <div className="dash-avatar-sheet" onClick={e => e.stopPropagation()}>
@@ -639,7 +639,7 @@ export default function Dashboard() {
 
     <div className="dash-layout">
 
-      {/* ── Sidebar ── */}
+      {/* â”€â”€ Sidebar â”€â”€ */}
       <aside className="dash-sidebar">
         {/* Profile + settings gear pinned at top */}
         <div className="dash-profile">
@@ -649,7 +649,7 @@ export default function Dashboard() {
               : <User size={30} />
             }
           </div>
-          <span className="dash-username">{fullName || username || '—'}</span>
+          <span className="dash-username">{fullName || username || 'â€”'}</span>
           <div className="dash-badges">
             {age !== null && <span className="dash-age">Age {age}</span>}
             {gender && <span className={`dash-gender dash-gender--${gender}`}>{gender === 'male' ? 'Male' : 'Female'}</span>}
@@ -670,7 +670,7 @@ export default function Dashboard() {
         <nav className="dash-nav-scroll">
 
         <button className="dash-compare" onClick={() => { playNavigate(); navigate('/compare') }}>
-          <span className="dash-compare-icon">⇌</span>
+          <span className="dash-compare-icon">â‡Œ</span>
           <span>Compare Standards</span>
         </button>
 
@@ -702,10 +702,10 @@ export default function Dashboard() {
         </nav>
       </aside>
 
-      {/* ── Main ── */}
+      {/* â”€â”€ Main â”€â”€ */}
       <main className="dash-main">
 
-        {/* ── Profile header (SwimCloud style) ── */}
+        {/* â”€â”€ Profile header (SwimCloud style) â”€â”€ */}
         <div className="dash-profile-header">
 
           {/* Banner strip */}
@@ -745,25 +745,25 @@ export default function Dashboard() {
                   </span>
               }
               <span className="dash-avatar-camera-overlay">
-                {avatarUploading ? '…' : '📷'}
+                {avatarUploading ? 'â€¦' : 'ðŸ“·'}
               </span>
             </button>
             <input ref={avatarFileRef} type="file" accept="image/*" hidden onChange={handleAvatarFile} />
             <div className="dash-profile-meta">
-              <h1 className="dash-welcome">{fullName || username || '…'}</h1>
+              <h1 className="dash-welcome">{fullName || username || 'â€¦'}</h1>
               <p className="dash-profile-sub">
                 {[
                   age !== null ? `Age ${age}` : null,
                   gender ? (gender === 'male' ? 'Male' : 'Female') : null,
                   course,
                   'Southern California Swimming',
-                ].filter(Boolean).join(' · ')}
+                ].filter(Boolean).join(' Â· ')}
               </p>
               <div className="dash-follow-stats">
                 <button className="dash-follow-stat" onClick={() => navigate('/friends?tab=followers')}>
                   <strong>{followCounts.followers}</strong> followers
                 </button>
-                <span className="dash-follow-dot">·</span>
+                <span className="dash-follow-dot">Â·</span>
                 <button className="dash-follow-stat" onClick={() => navigate('/friends?tab=following')}>
                   <strong>{followCounts.following}</strong> following
                 </button>
@@ -780,7 +780,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ── Notifications panel ── */}
+        {/* â”€â”€ Notifications panel â”€â”€ */}
         {showNotifs && (
           <div className="notifs-panel">
             <div className="notifs-header">
@@ -821,7 +821,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── Import warning ── */}
+        {/* â”€â”€ Import warning â”€â”€ */}
         {!importBannerDismissed && Object.keys(timeHistory).length < 3 && (
           <div className="dash-import-banner">
             <div className="dash-import-banner-body">
@@ -830,13 +830,13 @@ export default function Dashboard() {
                 Features like the <strong>Progress Tracker</strong> only work if your full career history is imported.
                 Without it, charts and trends will be empty or incomplete.
                 Sign into <strong>Swimcloud</strong> or <strong>USA Swimming</strong>, copy your full times history,
-                and paste it in <strong>Import Times</strong> — it will automatically fill in Progress and everywhere else.
+                and paste it in <strong>Import Times</strong> â€” it will automatically fill in Progress and everywhere else.
               </p>
               <button
                 className="dash-import-banner-btn"
                 onClick={() => { playNavigate(); navigate('/import') }}
               >
-                Import Times →
+                Import Times â†’
               </button>
             </div>
             <button
@@ -852,7 +852,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── Times Panel ── */}
+        {/* â”€â”€ Times Panel â”€â”€ */}
         <section className="times-panel">
           <div className="times-toolbar">
             <div className="times-toolbar-left">
@@ -882,8 +882,8 @@ export default function Dashboard() {
             <div className="toolbar-right">
               {editing && (
                 <span className={`save-status save-status--${saveStatus}`}>
-                  {saveStatus === 'saving' && 'Saving…'}
-                  {saveStatus === 'saved'  && '✓ Saved'}
+                  {saveStatus === 'saving' && 'Savingâ€¦'}
+                  {saveStatus === 'saved'  && 'âœ“ Saved'}
                   {saveStatus === 'error'  && 'Error saving'}
                 </span>
               )}
@@ -899,9 +899,9 @@ export default function Dashboard() {
 
           {editing && (
             <div className="times-format-hint">
-              Type <strong>numbers only</strong> — the <strong>:</strong> and <strong>.</strong> are placed automatically.
+              Type <strong>numbers only</strong> â€” the <strong>:</strong> and <strong>.</strong> are placed automatically.
               &thinsp; Example: type <code>10234</code> to get <strong>1:02.34</strong>.
-              &thinsp; Seconds must be 00–59.
+              &thinsp; Seconds must be 00â€“59.
             </div>
           )}
 
@@ -938,7 +938,7 @@ export default function Dashboard() {
                       />
                     ) : (
                       <span className="time-value">
-                        {times[timeKey(course, id)] || '—'}
+                        {times[timeKey(course, id)] || 'â€”'}
                       </span>
                     )}
                   </div>
@@ -953,7 +953,7 @@ export default function Dashboard() {
 
       </main>
 
-      {/* ── Mobile bottom nav ── */}
+      {/* â”€â”€ Mobile bottom nav â”€â”€ */}
       <nav className="dash-mobile-nav">
         <button className="dash-mobile-nav-btn" onClick={() => { playNavigate(); navigate('/compare') }}>
           <Trophy size={20} />
@@ -981,3 +981,4 @@ export default function Dashboard() {
     </>
   )
 }
+

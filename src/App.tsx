@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { supabase } from './lib/supabase'
@@ -7,7 +7,7 @@ import trackProgressImg from './Assets/TrackProgress.png'
 import planEventsImg from './Assets/PlanEvents.png'
 import './App.css'
 
-// ── Star Rating ───────────────────────────────────────────────────────────────
+// â”€â”€ Star Rating â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function StarRating({ onDone }: { onDone?: () => void }) {
   const [hovered,  setHovered]  = useState(0)
@@ -30,9 +30,9 @@ function StarRating({ onDone }: { onDone?: () => void }) {
     return (
       <section className="rating-section">
         <div className="rating-card">
-          <div className="rating-thanks-icon">★</div>
+          <div className="rating-thanks-icon">â˜…</div>
           <h3 className="rating-thanks-title">Thanks for the feedback!</h3>
-          <p className="rating-thanks-sub">Your rating helps us improve SwimSCPlan.</p>
+          <p className="rating-thanks-sub">Your rating helps us improve SwimSync.</p>
         </div>
       </section>
     )
@@ -42,7 +42,7 @@ function StarRating({ onDone }: { onDone?: () => void }) {
   return (
     <section className="rating-section">
       <div className="rating-card">
-        <h2 className="rating-heading">Rate SwimSCPlan</h2>
+        <h2 className="rating-heading">Rate SwimSync</h2>
         <p className="rating-sub">How useful has this app been for your swimming?</p>
         <div className="rating-stars" onMouseLeave={() => setHovered(0)}>
           {[1, 2, 3, 4, 5].map(n => (
@@ -52,7 +52,7 @@ function StarRating({ onDone }: { onDone?: () => void }) {
               onMouseEnter={() => setHovered(n)}
               onClick={() => setSelected(n)}
               aria-label={`${n} star${n > 1 ? 's' : ''}`}
-            >★</button>
+            >â˜…</button>
           ))}
         </div>
         {selected > 0 && <p className="rating-label">{['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent!'][selected]}</p>}
@@ -67,9 +67,9 @@ function StarRating({ onDone }: { onDone?: () => void }) {
           />
         )}
         <button className="rating-submit" onClick={submit} disabled={!selected || status === 'sending'}>
-          {status === 'sending' ? 'Submitting…' : 'Submit Rating'}
+          {status === 'sending' ? 'Submittingâ€¦' : 'Submit Rating'}
         </button>
-        {status === 'error' && <p className="rating-error">Something went wrong — please try again.</p>}
+        {status === 'error' && <p className="rating-error">Something went wrong â€” please try again.</p>}
       </div>
     </section>
   )
@@ -99,7 +99,7 @@ function ReviewsCarousel({ refresh }: { refresh: number }) {
       <div className="reviews-scroll">
         {reviews.map(r => (
           <div key={r.id} className="reviews-card">
-            <div className="reviews-card-stars">★★★★★</div>
+            <div className="reviews-card-stars">â˜…â˜…â˜…â˜…â˜…</div>
             <p className="reviews-comment">"{r.comment}"</p>
             <span className="reviews-date">
               {new Date(r.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
@@ -121,7 +121,7 @@ function RatingSection() {
   )
 }
 
-// ── Quotes ────────────────────────────────────────────────────────────────────
+// â”€â”€ Quotes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const QUOTES = [
   { text: "The water is your friend. Just share the same spirit as the water, and it will help you move.", author: "Aleksandr Popov" },
@@ -175,7 +175,7 @@ function QuotesCarousel() {
           >
             <div className="quotes-mark-large" aria-hidden="true">&ldquo;</div>
             <p className="quotes-text-large">{q.text}</p>
-            <p className="quotes-author-large">— {q.author}</p>
+            <p className="quotes-author-large">â€” {q.author}</p>
           </motion.div>
         </AnimatePresence>
       </div>
@@ -196,7 +196,7 @@ function QuotesCarousel() {
   )
 }
 
-// ── Motion variants ───────────────────────────────────────────────────────────
+// â”€â”€ Motion variants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const fadeUp = {
   initial: { opacity: 0, y: 36 },
@@ -228,11 +228,11 @@ const fadeRight = {
 
 // Directional slide-in per bento card: left cards from left, right cards from right
 const BENTO_DIRS: [number, number][] = [
-  [-80, 10],  // Compare Times        — big left card, slides in from left
-  [ 80, -10], // Qualifications       — right column, from right
-  [ 80,   0], // Goals                — right column, from right
-  [-70,   0], // Store & Share Media  — left cell, from left
-  [  0,  50], // Event Planning       — center cell, rises from below
+  [-80, 10],  // Compare Times        â€” big left card, slides in from left
+  [ 80, -10], // Qualifications       â€” right column, from right
+  [ 80,   0], // Goals                â€” right column, from right
+  [-70,   0], // Store & Share Media  â€” left cell, from left
+  [  0,  50], // Event Planning       â€” center cell, rises from below
 ]
 
 const bentoVariant = (i: number) => {
@@ -245,7 +245,7 @@ const bentoVariant = (i: number) => {
   }
 }
 
-// ── Static particle positions (no Math.random in render) ──────────────────────
+// â”€â”€ Static particle positions (no Math.random in render) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const PARTICLES = [
   { left: '7%',  top: '15%', delay: '0s',    dur: '5s'   },
@@ -264,7 +264,7 @@ const PARTICLES = [
 
 const RAY_LEFTS = [12, 26, 40, 55, 69, 84]
 
-// ── Features data ─────────────────────────────────────────────────────────────
+// â”€â”€ Features data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const FEATURES: { title: string; blurb: string; svg?: boolean; spanClass?: string }[] = [
   {
@@ -284,7 +284,7 @@ const FEATURES: { title: string; blurb: string; svg?: boolean; spanClass?: strin
   },
   {
     title: 'Store & Share Media',
-    blurb: 'Import your swim photos and pull images from an associated Instagram or Facebook handle — such as your league\'s official account — for a specific date range to collect and review meet-day content.',
+    blurb: 'Import your swim photos and pull images from an associated Instagram or Facebook handle â€” such as your league\'s official account â€” for a specific date range to collect and review meet-day content.',
     spanClass: 'bento-span-rows',
   },
   {
@@ -308,7 +308,7 @@ const NAV_SECTIONS = [
 
 const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 
-// ── App ───────────────────────────────────────────────────────────────────────
+// â”€â”€ App â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function App() {
   const navigate = useNavigate()
@@ -317,13 +317,13 @@ function App() {
   const heroRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end end'] })
 
-  // UI content (text, badge, buttons) exits FIRST — fast upward sweep + immediate fade
+  // UI content (text, badge, buttons) exits FIRST â€” fast upward sweep + immediate fade
   const heroContentOpacity = useTransform(scrollYProgress, [0.01, 0.08], [1, 0])
   const heroTextY          = useTransform(scrollYProgress, [0, 0.08], [0, -340])
   // After opacity reaches 0, also set visibility:hidden so GPU-promoted layers can't bleed through
   const heroContentVisibility = useTransform(scrollYProgress, v => v > 0.09 ? 'hidden' : 'visible')
 
-  // Background image fades AFTER content is already gone — crossfades directly into scene 2
+  // Background image fades AFTER content is already gone â€” crossfades directly into scene 2
   const scene1Opacity = useTransform(scrollYProgress, [0.06, 0.17], [1, 0])
   const heroImgScale  = useTransform(scrollYProgress, [0, 0.17], [1, 1.12])
 
@@ -352,12 +352,12 @@ function App() {
   return (
     <div className="page">
 
-      {/* ── Navbar ── */}
+      {/* â”€â”€ Navbar â”€â”€ */}
       <header className="navbar">
         <div className="nav-left">
           <div className="nav-brand">
-            <img src="/logo.svg" alt="SwimSCPlan logo" className="nav-logo-img" />
-            <span className="nav-logo">SwimSCPlan</span>
+            <img src="/logo.svg" alt="SwimSync logo" className="nav-logo-img" />
+            <span className="nav-logo">SwimSync</span>
           </div>
           <nav className="nav-links">
             {NAV_SECTIONS.map(s => (
@@ -377,11 +377,11 @@ function App() {
         </div>
       </header>
 
-      {/* ── Pinned Scroll Journey (350 vh) ── */}
+      {/* â”€â”€ Pinned Scroll Journey (350 vh) â”€â”€ */}
       <div ref={heroRef} id="hero" className="hero-scroll-container">
         <div className="sticky-scene-wrapper">
 
-          {/* Scene 1 — Surface */}
+          {/* Scene 1 â€” Surface */}
           <motion.div className="scene" style={{ opacity: scene1Opacity }}>
             <motion.div
               className="scene-bg-img"
@@ -425,7 +425,7 @@ function App() {
                   Get Started Free
                 </button>
                 <button className="btn-ghost" onClick={() => scrollTo('features')}>
-                  See How It Works →
+                  See How It Works â†’
                 </button>
               </motion.div>
             </motion.div>
@@ -435,7 +435,7 @@ function App() {
             </motion.div>
           </motion.div>
 
-          {/* Scene 2 — Underwater */}
+          {/* Scene 2 â€” Underwater */}
           <motion.div className="scene" style={{ opacity: scene2Opacity, pointerEvents: 'none' }}>
             <motion.div className="pool-tiles-bg" style={{ y: tilesY }} />
             {RAY_LEFTS.map((left, i) => (
@@ -450,7 +450,7 @@ function App() {
             ))}
             <div className="scene-overlay scene-overlay--underwater" />
             <div id="what" className="underwater-content">
-              <h2 className="underwater-heading">Why Use SwimSCPlan?</h2>
+              <h2 className="underwater-heading">Why Use SwimSync?</h2>
               <div className="uw-images">
                 <motion.div className="uw-img-item" style={{ scale: uwImgScale, x: uwLeftX }}>
                   <p className="uw-img-caption">Check Times</p>
@@ -471,7 +471,7 @@ function App() {
         </div>
       </div>
 
-      {/* ── Features ── */}
+      {/* â”€â”€ Features â”€â”€ */}
       <section id="features" className="features-section">
         <div className="features-header">
           <motion.h2 className="section-heading-dark" {...fadeUp}>
@@ -515,7 +515,7 @@ function App() {
         </div>
       </section>
 
-      {/* ── About ── */}
+      {/* â”€â”€ About â”€â”€ */}
       <section ref={aboutRef} id="about" className="about">
         <motion.div className="section-scroll-glow" style={{ left: aboutGlowX, top: aboutGlowY }} />
         <div className="about-inner">
@@ -523,13 +523,13 @@ function App() {
             <span className="about-badge">Our Story</span>
             <h2>Built by a swimmer,<br />for swimmers.</h2>
             <p className="about-body">
-              SwimSCPlan was created out of frustration with scattered spreadsheets and PDF
+              SwimSync was created out of frustration with scattered spreadsheets and PDF
               standards sheets. I wanted one place that knew my times, knew the SCS cuts, and
-              told me exactly where I stood — without digging through documents before every meet.
+              told me exactly where I stood â€” without digging through documents before every meet.
             </p>
             <p className="about-inspiration">
               The inspiration? Every swimmer deserves a clear goal to chase and real data to
-              back it up — not just a gut feeling. Whether you're chasing your first WAG cut or
+              back it up â€” not just a gut feeling. Whether you're chasing your first WAG cut or
               shaving tenths off your 50 fly, you should always know how close you are.
             </p>
           </motion.div>
@@ -555,15 +555,15 @@ function App() {
         </div>
       </section>
 
-      {/* ── Quotes ── */}
+      {/* â”€â”€ Quotes â”€â”€ */}
       <div ref={quotesWrapRef} className="quotes-glow-wrap">
         <motion.div className="section-scroll-glow section-scroll-glow--gold" style={{ left: quotesGlowX, top: quotesGlowY }} />
         <QuotesCarousel />
       </div>
 
-      {/* ── Creators ── */}
+      {/* â”€â”€ Creators â”€â”€ */}
       <section id="creators" className="creators">
-        <motion.h2 className="creators-heading" {...fadeUp}>Meet the People Behind SwimSCPlan</motion.h2>
+        <motion.h2 className="creators-heading" {...fadeUp}>Meet the People Behind SwimSync</motion.h2>
         <motion.div className="creators-tabs" {...fadeUpDelayed(0.1)}>
           <button className={`creators-tab${creatorTab === 'caleb' ? ' active' : ''}`} onClick={() => setCreatorTab('caleb')}>
             Caleb Pang &mdash; Creator
@@ -598,8 +598,8 @@ function App() {
               <p className="creators-bio">
                 My name is Caleb Pang and I am 14 years old as a freshman in Troy High School.
                 I swim for FAST which is a club based in Fullerton and I have been swimming for
-                2–3 years at this point. I was born in Maryland but moved to Southern California
-                when I was young. For those 2–3 years, I had loved the sport of swimming and even
+                2â€“3 years at this point. I was born in Maryland but moved to Southern California
+                when I was young. For those 2â€“3 years, I had loved the sport of swimming and even
                 when I had to wake up early in the morning, I always ended up enjoying practice.
               </p>
             ) : (
@@ -613,14 +613,14 @@ function App() {
         </motion.div>
       </section>
 
-      {/* ── Rating ── */}
+      {/* â”€â”€ Rating â”€â”€ */}
       <RatingSection />
 
-      {/* ── CTA ── */}
+      {/* â”€â”€ CTA â”€â”€ */}
       <section id="cta" className="cta cta--immersive">
         <div className="cta-spotlight" />
         <div className="cta-glass-card">
-          <motion.img src="/logo.svg" alt="SwimSCPlan logo" className="cta-logo" {...fadeUp} />
+          <motion.img src="/logo.svg" alt="SwimSync logo" className="cta-logo" {...fadeUp} />
           <motion.h2 {...fadeUpDelayed(0.1)}>Ready to get started?</motion.h2>
           <motion.p {...fadeUpDelayed(0.2)}>Create a free account and take control of your training.</motion.p>
           <motion.button
@@ -635,11 +635,12 @@ function App() {
       </section>
 
       <footer className="footer">
-        <img src="/logo.svg" alt="SwimSCPlan logo" className="footer-logo" />
-        <span>© 2026 SwimSCPlan</span>
+        <img src="/logo.svg" alt="SwimSync logo" className="footer-logo" />
+        <span>Â© 2026 SwimSync</span>
       </footer>
     </div>
   )
 }
 
 export default App
+

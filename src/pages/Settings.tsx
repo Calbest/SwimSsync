@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Camera, User, RotateCcw, Eraser, Save } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -131,7 +131,7 @@ export default function Settings() {
     })
   }, [navigate])
 
-  // ── Canvas helpers ────────────────────────────────────────────────────────
+  // â”€â”€ Canvas helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   function fillCanvasBg(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
     const g = ctx.createLinearGradient(0, 0, 0, canvas.height)
@@ -324,7 +324,7 @@ export default function Settings() {
     if (!file || !userId) return
     setAvatarStatus('uploading')
 
-    // Resize to 256×256 JPEG via canvas — no Storage bucket required
+    // Resize to 256Ã—256 JPEG via canvas â€” no Storage bucket required
     const dataUrl = await new Promise<string>((resolve, reject) => {
       const img = new Image()
       img.onload = () => {
@@ -432,7 +432,7 @@ export default function Settings() {
 
         {settingsTab === 'profile' && <>
 
-        {/* ── Profile Picture ── */}
+        {/* â”€â”€ Profile Picture â”€â”€ */}
         <section className="settings-card">
           <h2 className="settings-section-title">Profile Picture</h2>
           <div className="avatar-section">
@@ -449,8 +449,8 @@ export default function Settings() {
             <input ref={fileInput} type="file" accept="image/*" hidden onChange={handleAvatarChange} />
             <div className="avatar-meta">
               <p className="settings-hint">Click your photo to choose a new one from your library.</p>
-              <p className="settings-hint muted">JPG, PNG, GIF — max 5 MB</p>
-              {avatarStatus === 'uploading' && <p className="status-info">Uploading…</p>}
+              <p className="settings-hint muted">JPG, PNG, GIF â€” max 5 MB</p>
+              {avatarStatus === 'uploading' && <p className="status-info">Uploadingâ€¦</p>}
               {avatarStatus === 'saved'     && <p className="status-success">Photo updated!</p>}
               {avatarStatus === 'error'     && (
                 <p className="status-error">
@@ -461,7 +461,7 @@ export default function Settings() {
           </div>
         </section>
 
-        {/* ── Banner Customization ── */}
+        {/* â”€â”€ Banner Customization â”€â”€ */}
         <section className="settings-card">
           <h2 className="settings-section-title">Dashboard Banner</h2>
 
@@ -486,7 +486,7 @@ export default function Settings() {
             >Upload Photo</button>
           </div>
 
-          {/* ── Colors tab ── */}
+          {/* â”€â”€ Colors tab â”€â”€ */}
           {bannerTab === 'colors' && (
             <div className="banner-colors-panel">
               <div className="banner-sub-label">Gradient Presets</div>
@@ -515,7 +515,7 @@ export default function Settings() {
                 ))}
                 {/* Custom color wheel */}
                 <label className="banner-color-wheel-btn" title="Pick any color">
-                  🎨
+                  ðŸŽ¨
                   <input
                     type="color"
                     value={bannerType === 'color' && bannerValue.startsWith('#') ? bannerValue : '#002855'}
@@ -535,7 +535,7 @@ export default function Settings() {
             </div>
           )}
 
-          {/* ── Paint tab ── */}
+          {/* â”€â”€ Paint tab â”€â”€ */}
           {bannerTab === 'paint' && (
             <div className="banner-paint-panel">
               <canvas
@@ -594,14 +594,14 @@ export default function Settings() {
                   disabled={bannerStatus === 'saving'}
                 >
                   <Save size={14} />
-                  {bannerStatus === 'saving' ? 'Saving…' : bannerStatus === 'saved' ? 'Saved!' : 'Save Banner'}
+                  {bannerStatus === 'saving' ? 'Savingâ€¦' : bannerStatus === 'saved' ? 'Saved!' : 'Save Banner'}
                 </button>
               </div>
-              <p className="banner-paint-hint">Draw on the canvas above — this will become your dashboard banner.</p>
+              <p className="banner-paint-hint">Draw on the canvas above â€” this will become your dashboard banner.</p>
             </div>
           )}
 
-          {/* ── Photo tab ── */}
+          {/* â”€â”€ Photo tab â”€â”€ */}
           {bannerTab === 'photo' && (
             <div className="banner-photo-panel">
               <input
@@ -632,7 +632,7 @@ export default function Settings() {
                     </button>
                   </div>
                   {bannerStatus === 'saved' && <p className="status-success">Banner saved!</p>}
-                  {bannerStatus === 'saving' && <p className="status-info">Saving…</p>}
+                  {bannerStatus === 'saving' && <p className="status-info">Savingâ€¦</p>}
                 </div>
               ) : (
                 <button
@@ -640,9 +640,9 @@ export default function Settings() {
                   onClick={() => bannerPhotoRef.current?.click()}
                   disabled={bannerStatus === 'saving'}
                 >
-                  <span className="banner-photo-drop-icon">🖼️</span>
-                  <span>{bannerStatus === 'saving' ? 'Saving…' : 'Choose a photo from your library'}</span>
-                  <span className="banner-photo-drop-hint">JPG, PNG, WEBP — recommended 1200 × 280 px</span>
+                  <span className="banner-photo-drop-icon">ðŸ–¼ï¸</span>
+                  <span>{bannerStatus === 'saving' ? 'Savingâ€¦' : 'Choose a photo from your library'}</span>
+                  <span className="banner-photo-drop-hint">JPG, PNG, WEBP â€” recommended 1200 Ã— 280 px</span>
                 </button>
               )}
             </div>
@@ -653,7 +653,7 @@ export default function Settings() {
           )}
         </section>
 
-        {/* ── Profile Info ── */}
+        {/* â”€â”€ Profile Info â”€â”€ */}
         <section className="settings-card">
           <h2 className="settings-section-title">Profile</h2>
 
@@ -674,12 +674,12 @@ export default function Settings() {
                   type="button"
                   className={`gender-btn${gender === 'male' ? ' active' : ''}`}
                   onClick={() => setGender('male')}
-                >♂ Male</button>
+                >â™‚ Male</button>
                 <button
                   type="button"
                   className={`gender-btn${gender === 'female' ? ' active' : ''}`}
                   onClick={() => setGender('female')}
-                >♀ Female</button>
+                >â™€ Female</button>
               </div>
             </div>
           </div>
@@ -695,7 +695,7 @@ export default function Settings() {
             />
             {dob && (
               <p className="settings-birthday-display">
-                🎂 {formatBirthday(dob)}
+                ðŸŽ‚ {formatBirthday(dob)}
               </p>
             )}
           </div>
@@ -731,7 +731,7 @@ export default function Settings() {
               onClick={saveProfile}
               disabled={profileStatus === 'saving'}
             >
-              {profileStatus === 'saving' ? 'Saving…' : profileStatus === 'saved' ? 'Saved!' : 'Save Profile'}
+              {profileStatus === 'saving' ? 'Savingâ€¦' : profileStatus === 'saved' ? 'Saved!' : 'Save Profile'}
             </button>
             {profileStatus === 'error' && <p className="status-error">Could not save profile.</p>}
           </div>
@@ -741,7 +741,7 @@ export default function Settings() {
 
         {settingsTab === 'account' && <>
 
-        {/* ── Account ── */}
+        {/* â”€â”€ Account â”€â”€ */}
         <section className="settings-card">
           <h2 className="settings-section-title">Account</h2>
 
@@ -759,7 +759,7 @@ export default function Settings() {
                 onClick={saveUsername}
                 disabled={usernameStatus === 'saving'}
               >
-                {usernameStatus === 'saving' ? 'Saving…' : usernameStatus === 'saved' ? 'Saved!' : 'Save'}
+                {usernameStatus === 'saving' ? 'Savingâ€¦' : usernameStatus === 'saved' ? 'Saved!' : 'Save'}
               </button>
             </div>
             {usernameStatus === 'error' && <p className="status-error">Could not update username.</p>}
@@ -780,7 +780,7 @@ export default function Settings() {
                 onClick={saveEmail}
                 disabled={emailStatus === 'saving'}
               >
-                {emailStatus === 'saving' ? 'Saving…' : emailStatus === 'saved' ? 'Check inbox' : 'Save'}
+                {emailStatus === 'saving' ? 'Savingâ€¦' : emailStatus === 'saved' ? 'Check inbox' : 'Save'}
               </button>
             </div>
             {emailStatus === 'saved' && (
@@ -790,7 +790,7 @@ export default function Settings() {
           </div>
         </section>
 
-        {/* ── Contact ── */}
+        {/* â”€â”€ Contact â”€â”€ */}
         <section className="settings-card">
           <h2 className="settings-section-title">Contact</h2>
           <div className="settings-field">
@@ -808,14 +808,14 @@ export default function Settings() {
                 onClick={savePhone}
                 disabled={phoneStatus === 'saving'}
               >
-                {phoneStatus === 'saving' ? 'Saving…' : phoneStatus === 'saved' ? 'Saved!' : 'Save'}
+                {phoneStatus === 'saving' ? 'Savingâ€¦' : phoneStatus === 'saved' ? 'Saved!' : 'Save'}
               </button>
             </div>
             {phoneStatus === 'error' && <p className="status-error">Could not save phone number.</p>}
           </div>
         </section>
 
-        {/* ── Password ── */}
+        {/* â”€â”€ Password â”€â”€ */}
         <section className="settings-card">
           <h2 className="settings-section-title">Password</h2>
 
@@ -830,7 +830,7 @@ export default function Settings() {
                 onClick={sendResetEmail}
                 disabled={resetStatus === 'loading'}
               >
-                {resetStatus === 'loading' ? 'Sending…' : 'Send Reset Email'}
+                {resetStatus === 'loading' ? 'Sendingâ€¦' : 'Send Reset Email'}
               </button>
             </div>
           )}
@@ -866,7 +866,7 @@ export default function Settings() {
                   onClick={changePassword}
                   disabled={resetStatus === 'loading'}
                 >
-                  {resetStatus === 'loading' ? 'Updating…' : 'Change Password'}
+                  {resetStatus === 'loading' ? 'Updatingâ€¦' : 'Change Password'}
                 </button>
                 <button
                   className="settings-cancel-btn"
@@ -882,7 +882,7 @@ export default function Settings() {
           {resetError && <p className="status-error">{resetError}</p>}
         </section>
 
-        {/* ── Notifications ── */}
+        {/* â”€â”€ Notifications â”€â”€ */}
         <section className="settings-card">
           <h2 className="settings-section-title">Notifications</h2>
           <p className="settings-hint" style={{ marginBottom: 20 }}>
@@ -897,7 +897,7 @@ export default function Settings() {
               { key: 'goalAchieved',     label: 'Goal achieved',              desc: 'Celebrate when you hit a cut or target time' },
               { key: 'streakMilestone',  label: 'Streak milestones',          desc: 'Recognition when you hit login or training streaks' },
               { key: 'trainingTips',     label: 'Training tips',              desc: 'Occasional tips on technique and race strategy' },
-              { key: 'newFeatures',      label: 'New features & updates',     desc: 'Know when SwimSCPlan adds something new' },
+              { key: 'newFeatures',      label: 'New features & updates',     desc: 'Know when SwimSync adds something new' },
               { key: 'motivationalQuotes', label: 'Motivational quotes',       desc: 'Get an inspiring quote once or twice a week to keep you going' },
             ] as { key: keyof typeof notifPrefs; label: string; desc: string }[]).map(({ key, label, desc }) => (
               <div key={key} className="notif-row">
@@ -920,14 +920,14 @@ export default function Settings() {
           <div className="settings-footer" style={{ marginTop: 24 }}>
             <button className="settings-save-btn" onClick={saveNotifPrefs} disabled={notifStatus === 'saving'}>
               <Save size={15} />
-              {notifStatus === 'saving' ? 'Saving…' : 'Save Preferences'}
+              {notifStatus === 'saving' ? 'Savingâ€¦' : 'Save Preferences'}
             </button>
             {notifStatus === 'saved'  && <span className="status-saved">Saved!</span>}
             {notifStatus === 'error'  && <span className="status-error">Error saving.</span>}
           </div>
         </section>
 
-        {/* ── Delete Account ── */}
+        {/* â”€â”€ Delete Account â”€â”€ */}
         <section className="settings-card settings-card--danger">
           <h2 className="settings-section-title settings-section-title--danger">Delete Account</h2>
 
@@ -951,7 +951,7 @@ export default function Settings() {
                   onClick={deleteAccount}
                   disabled={deleteStatus === 'loading'}
                 >
-                  {deleteStatus === 'loading' ? 'Deleting…' : 'Yes, delete my account'}
+                  {deleteStatus === 'loading' ? 'Deletingâ€¦' : 'Yes, delete my account'}
                 </button>
                 <button
                   className="settings-cancel-btn"
@@ -963,7 +963,7 @@ export default function Settings() {
               {deleteError && (
                 <p className="status-error" style={{ marginTop: 10 }}>
                   {deleteError.includes('delete_user') || deleteError.includes('function')
-                    ? 'Setup required — run the SQL function in Supabase first (see instructions above).'
+                    ? 'Setup required â€” run the SQL function in Supabase first (see instructions above).'
                     : deleteError}
                 </p>
               )}
@@ -991,7 +991,7 @@ export default function Settings() {
           return (
           <div className="tutorial-wrap">
 
-            {/* ── Replay onboarding ── */}
+            {/* â”€â”€ Replay onboarding â”€â”€ */}
             <div className="tut-replay-row">
               <div className="tut-replay-text">
                 <strong>New to SwimSync?</strong> Relaunch the interactive walkthrough.
@@ -1000,11 +1000,11 @@ export default function Settings() {
                 className="tut-replay-btn"
                 onClick={() => setShowOnboarding(true)}
               >
-                ▶ Start tour
+                â–¶ Start tour
               </button>
             </div>
 
-            {/* ── Carousel nav ── */}
+            {/* â”€â”€ Carousel nav â”€â”€ */}
             <div className="tut-carousel-nav">
               <button className="tut-arrow tut-arrow--prev" onClick={prev} aria-label="Previous">&#8592;</button>
               <div className="tut-carousel-center">
@@ -1024,12 +1024,12 @@ export default function Settings() {
               <button className="tut-arrow tut-arrow--next" onClick={next} aria-label="Next">&#8594;</button>
             </div>
 
-            {/* ── Slides ── */}
+            {/* â”€â”€ Slides â”€â”€ */}
             <div className="tut-slides-viewport">
 
             {tutSlide === 0 && (
             <div className="tut-section">
-              <div className="tut-section-header tut-header--blue">🏠 Dashboard — Your Home Screen</div>
+              <div className="tut-section-header tut-header--blue">ðŸ  Dashboard â€” Your Home Screen</div>
               <div className="tut-body">
                 <p className="tut-desc">The Dashboard is where you land after signing in. It's your personal command center showing everything at a glance.</p>
 
@@ -1039,7 +1039,7 @@ export default function Settings() {
                   <div className="tut-mockup-body mock-dash-layout">
                     <div className="mock-rail">
                       <div className="mock-rail-logo"/>
-                      {['⇌ Compare','🏆 Quals','🎯 Goals','📈 Progress','📅 Calendar','📚 Media','👥 Friends'].map((ic,i) => <div key={i} className={`mock-rail-btn${i===0?' active':''}`} style={{fontSize:'9px',padding:'3px 4px'}}>{ic}</div>)}
+                      {['â‡Œ Compare','ðŸ† Quals','ðŸŽ¯ Goals','ðŸ“ˆ Progress','ðŸ“… Calendar','ðŸ“š Media','ðŸ‘¥ Friends'].map((ic,i) => <div key={i} className={`mock-rail-btn${i===0?' active':''}`} style={{fontSize:'9px',padding:'3px 4px'}}>{ic}</div>)}
                     </div>
                     <div className="mock-dash-main">
                       <div className="mock-banner">
@@ -1066,32 +1066,32 @@ export default function Settings() {
                 </div>
 
                 <ul className="tut-list">
-                  <li><strong>Profile Banner:</strong> The colored bar at the top shows your name and profile photo. <em>Tap the photo circle to change your picture</em> — a sheet will appear with "Upload Photo" and "Remove Current Photo" options.</li>
+                  <li><strong>Profile Banner:</strong> The colored bar at the top shows your name and profile photo. <em>Tap the photo circle to change your picture</em> â€” a sheet will appear with "Upload Photo" and "Remove Current Photo" options.</li>
                   <li><strong>Welcome message:</strong> Below the banner shows your display name and current age (calculated from your birthday in Settings).</li>
                   <li><strong>Quick Stats:</strong> Your best logged times for your main events appear here. These update automatically when you add times in the Progress page.</li>
                   <li><strong>Sidebar (left):</strong> On desktop, the left panel has buttons to navigate the entire app. On mobile, a nav bar appears at the bottom of the screen.</li>
                   <li><strong>Upcoming meets:</strong> Any meets you've added in the Calendar show up as upcoming events.</li>
                   <li><strong>Motivational quotes:</strong> A new quote rotates every few days to keep you inspired.</li>
                 </ul>
-                <div className="tut-tip">💡 Customize your banner color or paint your own in Settings → Profile tab.</div>
+                <div className="tut-tip">ðŸ’¡ Customize your banner color or paint your own in Settings â†’ Profile tab.</div>
               </div>
             </div>
             )}
 
             {tutSlide === 1 && (
             <div className="tut-section">
-              <div className="tut-section-header tut-header--green">📅 Practice Calendar</div>
+              <div className="tut-section-header tut-header--green">ðŸ“… Practice Calendar</div>
               <div className="tut-body">
                 <p className="tut-desc">Log every practice, track your attendance patterns, and analyze your training trends month by month.</p>
 
                 {/* Calendar mockup */}
                 <div className="tut-mockup">
-                  <div className="tut-mockup-bar"><span className="tmb-dot r"/><span className="tmb-dot g"/><span className="tmb-dot y"/><span className="tmb-title">Practice Calendar — June 2026</span></div>
+                  <div className="tut-mockup-bar"><span className="tmb-dot r"/><span className="tmb-dot g"/><span className="tmb-dot y"/><span className="tmb-title">Practice Calendar â€” June 2026</span></div>
                   <div className="tut-mockup-body mock-cal-layout">
                     <div className="mock-cal-controls">
-                      <span className="mock-cal-nav">‹</span>
+                      <span className="mock-cal-nav">â€¹</span>
                       <span className="mock-cal-month">June 2026</span>
-                      <span className="mock-cal-nav">›</span>
+                      <span className="mock-cal-nav">â€º</span>
                       <span className="mock-cal-tab active">Month</span>
                       <span className="mock-cal-tab">Year</span>
                       <span className="mock-cal-tab">Career</span>
@@ -1109,7 +1109,7 @@ export default function Settings() {
                           <span className="mock-cal-num">{i < 7 ? '' : i - 5}</span>
                           {cell.at && <span className="mock-dot-green"/>}
                           {cell.ab && <span className="mock-dot-red"/>}
-                          {cell.m  && <span className="mock-meet-chip">🏊 SCS Invite</span>}
+                          {cell.m  && <span className="mock-meet-chip">ðŸŠ SCS Invite</span>}
                         </div>
                       ))}
                     </div>
@@ -1118,7 +1118,7 @@ export default function Settings() {
                       <span className="mock-dot-amber"/> Late &nbsp;
                       <span className="mock-dot-red"/> Absent &nbsp;
                       <span className="mock-dot-gray"/> Cancelled &nbsp;
-                      <span className="mock-dot-gold">★</span> Meet
+                      <span className="mock-dot-gold">â˜…</span> Meet
                     </div>
                   </div>
                 </div>
@@ -1126,16 +1126,16 @@ export default function Settings() {
                 <h4 className="tut-sub">Logging a Practice</h4>
                 <ul className="tut-list">
                   <li>Tap any practice day on the calendar grid. A panel slides up from the bottom.</li>
-                  <li>Choose a <strong>session status</strong>: <em>Attended</em> (green dot), <em>Late</em> (amber dot — enter how many minutes late), <em>Absent</em> (red dot), or <em>Cancelled</em> (gray).</li>
-                  <li>If attended, rate your <strong>mood</strong> from 😣 (1) to 😄 (5) — this feeds the monthly mood chart.</li>
-                  <li>If absent, enter a <strong>reason</strong> (e.g., "sick", "school event") — it appears in your monthly Absence Reasons list so you can spot patterns.</li>
+                  <li>Choose a <strong>session status</strong>: <em>Attended</em> (green dot), <em>Late</em> (amber dot â€” enter how many minutes late), <em>Absent</em> (red dot), or <em>Cancelled</em> (gray).</li>
+                  <li>If attended, rate your <strong>mood</strong> from ðŸ˜£ (1) to ðŸ˜„ (5) â€” this feeds the monthly mood chart.</li>
+                  <li>If absent, enter a <strong>reason</strong> (e.g., "sick", "school event") â€” it appears in your monthly Absence Reasons list so you can spot patterns.</li>
                   <li>Tap <strong>"Add 2nd Session"</strong> if you had both morning and afternoon practice that day.</li>
-                  <li><strong>Dryland:</strong> Toggle On if you did strength training, stretching, yoga, etc. Pick the type — these feed the Dryland Types pie chart.</li>
+                  <li><strong>Dryland:</strong> Toggle On if you did strength training, stretching, yoga, etc. Pick the type â€” these feed the Dryland Types pie chart.</li>
                 </ul>
                 <h4 className="tut-sub">Adding a Meet</h4>
                 <ul className="tut-list">
-                  <li>Tap <strong>"Add Meet"</strong> in the top-right of the calendar. Enter the meet name and date — it appears as a gold chip on that day.</li>
-                  <li>Tap a meet chip to open its analysis form: overall mood, confidence (1–5), weather/conditions (1–5), any injuries, and performance notes.</li>
+                  <li>Tap <strong>"Add Meet"</strong> in the top-right of the calendar. Enter the meet name and date â€” it appears as a gold chip on that day.</li>
+                  <li>Tap a meet chip to open its analysis form: overall mood, confidence (1â€“5), weather/conditions (1â€“5), any injuries, and performance notes.</li>
                 </ul>
                 <h4 className="tut-sub">Views</h4>
                 <ul className="tut-list">
@@ -1146,15 +1146,15 @@ export default function Settings() {
                 <h4 className="tut-sub">Monthly Analysis (scroll below the grid)</h4>
                 <ul className="tut-list">
                   <li>Three donut pie charts: <em>Attendance</em>, <em>Practice Mood</em>, and <em>Dryland Types</em>. Hover (or tap) a slice to see the percentage.</li>
-                  <li><em>Absence Reasons</em> list — all the reasons you entered when marking yourself absent.</li>
-                  <li><em>Meet Analysis</em> cards — a summary of mood, confidence, weather, injuries, and notes for each meet that month.</li>
+                  <li><em>Absence Reasons</em> list â€” all the reasons you entered when marking yourself absent.</li>
+                  <li><em>Meet Analysis</em> cards â€” a summary of mood, confidence, weather, injuries, and notes for each meet that month.</li>
                 </ul>
                 <h4 className="tut-sub">Edit Schedule</h4>
                 <ul className="tut-list">
                   <li>Tap <strong>"Edit Schedule"</strong> in the left sidebar to set which days of the week you normally have practice, which days have two sessions by default, and what time practice starts.</li>
                   <li>Setting this up makes the calendar highlight the right days automatically.</li>
                 </ul>
-                <div className="tut-tip">💡 The dots in each calendar cell use mood color when you rated a practice — a bright green dot means a great session!</div>
+                <div className="tut-tip">ðŸ’¡ The dots in each calendar cell use mood color when you rated a practice â€” a bright green dot means a great session!</div>
               </div>
             </div>
 
@@ -1162,9 +1162,9 @@ export default function Settings() {
 
             {tutSlide === 2 && (
             <div className="tut-section">
-              <div className="tut-section-header tut-header--purple">📚 Media Library</div>
+              <div className="tut-section-header tut-header--purple">ðŸ“š Media Library</div>
               <div className="tut-body">
-                <p className="tut-desc">Your personal swim scrapbook. Store race results, videos, split sheets, group photos, awards, and certificates — all organized by month.</p>
+                <p className="tut-desc">Your personal swim scrapbook. Store race results, videos, split sheets, group photos, awards, and certificates â€” all organized by month.</p>
 
                 {/* Media Library mockup */}
                 <div className="tut-mockup">
@@ -1209,9 +1209,9 @@ export default function Settings() {
 
                 <h4 className="tut-sub">Adding a Race / Swim</h4>
                 <ul className="tut-list">
-                  <li>Tap <strong>"Add Media"</strong> → <strong>"Race / Swim"</strong>.</li>
+                  <li>Tap <strong>"Add Media"</strong> â†’ <strong>"Race / Swim"</strong>.</li>
                   <li>Choose the event (e.g., 100 Freestyle), course (SCY/LCM/SCM), date, and your final time.</li>
-                  <li><strong>Splits:</strong> Fields appear automatically — one box per 50 yards/meters. Fill them in from your result sheet.</li>
+                  <li><strong>Splits:</strong> Fields appear automatically â€” one box per 50 yards/meters. Fill them in from your result sheet.</li>
                   <li><strong>Race video:</strong> Paste a YouTube or Vimeo link to attach the video to this entry.</li>
                   <li><strong>Notes:</strong> How did the race feel? What went well? What do you want to fix?</li>
                   <li><strong>Coach Feedback:</strong> What did your coach tell you after the race?</li>
@@ -1219,17 +1219,17 @@ export default function Settings() {
                 </ul>
                 <h4 className="tut-sub">Adding Photos &amp; Awards</h4>
                 <ul className="tut-list">
-                  <li>Tap <strong>"Add Media"</strong> → <strong>"Photos &amp; Awards"</strong>.</li>
+                  <li>Tap <strong>"Add Media"</strong> â†’ <strong>"Photos &amp; Awards"</strong>.</li>
                   <li>Give it a title, pick a category (Group Photo, Award, Certificate, Team Event, Other), and add a description.</li>
                   <li>Upload photos and optionally attach a video link.</li>
                 </ul>
                 <h4 className="tut-sub">Browsing Your Library</h4>
                 <ul className="tut-list">
-                  <li>Entries are grouped by <strong>month</strong> — just like the iPhone Photos app — making it easy to find anything by when it happened.</li>
+                  <li>Entries are grouped by <strong>month</strong> â€” just like the iPhone Photos app â€” making it easy to find anything by when it happened.</li>
                   <li>Each card shows a thumbnail, the event/title, time or category, and tags.</li>
                   <li>Tap any card to open the full detail view. Tap <strong>Edit</strong> to update any field.</li>
                 </ul>
-                <div className="tut-tip">💡 Photos are stored securely in your account — no extra setup needed. They're linked to the entry and viewable any time you open the entry card.</div>
+                <div className="tut-tip">ðŸ’¡ Photos are stored securely in your account â€” no extra setup needed. They're linked to the entry and viewable any time you open the entry card.</div>
               </div>
             </div>
 
@@ -1237,13 +1237,13 @@ export default function Settings() {
 
             {tutSlide === 3 && (
             <div className="tut-section">
-              <div className="tut-section-header tut-header--teal">📈 Progress</div>
+              <div className="tut-section-header tut-header--teal">ðŸ“ˆ Progress</div>
               <div className="tut-body">
                 <p className="tut-desc">Track how your times have changed over your career with an interactive chart for every event.</p>
 
                 {/* Progress mockup */}
                 <div className="tut-mockup">
-                  <div className="tut-mockup-bar"><span className="tmb-dot r"/><span className="tmb-dot g"/><span className="tmb-dot y"/><span className="tmb-title">Progress — 100 Free SCY</span></div>
+                  <div className="tut-mockup-bar"><span className="tmb-dot r"/><span className="tmb-dot g"/><span className="tmb-dot y"/><span className="tmb-title">Progress â€” 100 Free SCY</span></div>
                   <div className="tut-mockup-body mock-prog-layout">
                     <div className="mock-prog-sidebar">
                       <div className="mock-bar mock-bar--xs mock-bar--gray" style={{marginBottom:6}}/>
@@ -1253,7 +1253,7 @@ export default function Settings() {
                       <div className="mock-prog-pill">50 Free</div>
                     </div>
                     <div className="mock-prog-chart">
-                      <div className="mock-chart-ylabel">slower ↑</div>
+                      <div className="mock-chart-ylabel">slower â†‘</div>
                       <svg className="mock-chart-svg" viewBox="0 0 240 90" preserveAspectRatio="none">
                         <defs>
                           <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
@@ -1269,7 +1269,7 @@ export default function Settings() {
                               <>
                                 <circle cx={x} cy={y} r="7" fill="#f59e0b" opacity="0.3"/>
                                 <circle cx={x} cy={y} r="5" fill="#f59e0b" stroke="#d97706" strokeWidth="1.5"/>
-                                <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize="5" fill="#fff" fontWeight="bold">★</text>
+                                <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize="5" fill="#fff" fontWeight="bold">â˜…</text>
                               </>
                             ) : (
                               <circle cx={x} cy={y} r="3.5" fill="#fff" stroke="#0891b2" strokeWidth="1.5"/>
@@ -1278,24 +1278,24 @@ export default function Settings() {
                         ))}
                         <rect x="170" y="2" width="66" height="22" rx="4" fill="#0f172a" opacity="0.85"/>
                         <text x="203" y="11" textAnchor="middle" fill="#fff" fontSize="6" fontWeight="bold">47.89</text>
-                        <text x="203" y="20" textAnchor="middle" fill="#67e8f9" fontSize="5">Jun 2026 · age 17</text>
+                        <text x="203" y="20" textAnchor="middle" fill="#67e8f9" fontSize="5">Jun 2026 Â· age 17</text>
                       </svg>
                       <div className="mock-chart-xlabel">
                         <span>2022</span><span>2023</span><span>2024</span><span>2025</span><span>2026</span>
                       </div>
-                      <div className="mock-chart-pb"><span className="mock-pb-badge">★ PB 47.89</span></div>
+                      <div className="mock-chart-pb"><span className="mock-pb-badge">â˜… PB 47.89</span></div>
                     </div>
                   </div>
                 </div>
 
                 <ul className="tut-list">
                   <li><strong>Select an event:</strong> In the left sidebar, pick a course (SCY/LCM/SCM), then a stroke and distance. The chart updates immediately.</li>
-                  <li><strong>Reading the chart:</strong> Time flows left to right (oldest → newest). The vertical axis is speed — <em>lower on the chart = faster time</em>. A dot moving down and to the right means improvement.</li>
+                  <li><strong>Reading the chart:</strong> Time flows left to right (oldest â†’ newest). The vertical axis is speed â€” <em>lower on the chart = faster time</em>. A dot moving down and to the right means improvement.</li>
                   <li><strong>Hover a dot:</strong> On desktop, hover over any dot to see a tooltip with the exact date, your time, and how old you were at that swim. On mobile, tap the dot.</li>
                   <li><strong>Adding/editing times:</strong> Switch to the <em>Times</em> tab in the sidebar. Enter a date and time, then tap the checkmark to save. Tap any existing time to edit or delete it.</li>
-                  <li><strong>Personal Bests:</strong> Your fastest entry is highlighted with a <span style={{background:'#f59e0b',color:'#fff',padding:'1px 5px',borderRadius:3,fontSize:'0.85em',fontWeight:800}}>★ PB</span> gold badge on the entry list and a gold star dot on the chart.</li>
+                  <li><strong>Personal Bests:</strong> Your fastest entry is highlighted with a <span style={{background:'#f59e0b',color:'#fff',padding:'1px 5px',borderRadius:3,fontSize:'0.85em',fontWeight:800}}>â˜… PB</span> gold badge on the entry list and a gold star dot on the chart.</li>
                 </ul>
-                <div className="tut-tip">💡 Add times as far back as you can remember — the more history you enter, the better the chart shows your progression over your career.</div>
+                <div className="tut-tip">ðŸ’¡ Add times as far back as you can remember â€” the more history you enter, the better the chart shows your progression over your career.</div>
               </div>
             </div>
 
@@ -1303,7 +1303,7 @@ export default function Settings() {
 
             {tutSlide === 4 && (
             <div className="tut-section">
-              <div className="tut-section-header tut-header--orange">🎯 Goals</div>
+              <div className="tut-section-header tut-header--orange">ðŸŽ¯ Goals</div>
               <div className="tut-body">
                 <p className="tut-desc">Set a target time for any event and watch your progress toward it in real time.</p>
 
@@ -1317,11 +1317,11 @@ export default function Settings() {
                           <div className="mock-goal-event">100 Free SCY</div>
                           <div className="mock-goal-course">Short Course Yards</div>
                         </div>
-                        <div className="mock-goal-badge">✓ Achieved!</div>
+                        <div className="mock-goal-badge">âœ“ Achieved!</div>
                       </div>
                       <div className="mock-goal-times">
                         <div className="mock-time-block"><div className="mock-time-label">Current</div><div className="mock-time-val mock-time-val--green">47.89</div></div>
-                        <div className="mock-time-arrow">→</div>
+                        <div className="mock-time-arrow">â†’</div>
                         <div className="mock-time-block"><div className="mock-time-label">Target</div><div className="mock-time-val">48.00</div></div>
                       </div>
                       <div className="mock-goal-slider-wrap"><div className="mock-goal-slider-fill" style={{width:'100%'}}/><div className="mock-goal-slider-marker" style={{left:'100%'}}/></div>
@@ -1337,7 +1337,7 @@ export default function Settings() {
                       </div>
                       <div className="mock-goal-times">
                         <div className="mock-time-block"><div className="mock-time-label">Current</div><div className="mock-time-val">1:48.33</div></div>
-                        <div className="mock-time-arrow">→</div>
+                        <div className="mock-time-arrow">â†’</div>
                         <div className="mock-time-block"><div className="mock-time-label">Target</div><div className="mock-time-val">1:45.00</div></div>
                       </div>
                       <div className="mock-goal-slider-wrap"><div className="mock-goal-slider-fill" style={{width:'62%'}}/><div className="mock-goal-slider-marker" style={{left:'62%'}}/></div>
@@ -1349,11 +1349,11 @@ export default function Settings() {
                 <ul className="tut-list">
                   <li><strong>Create a goal:</strong> Tap "Create your first goal" (or "Add another goal"). Select an event, your starting time, the target time, and an optional deadline.</li>
                   <li><strong>Goal cards:</strong> Each card shows your current best time (pulled live from your Progress logs) vs. your target, and how many days until your deadline.</li>
-                  <li><strong>Achieved:</strong> When your logged time beats the target, the card turns green with a "✓ Achieved!" badge.</li>
-                  <li><strong>Archive:</strong> When goals are achieved, an "Archive Completed Goals" button appears at the top. Tap it to move finished goals to a history section at the bottom. Use the ▼ chevron to expand and view your archive.</li>
+                  <li><strong>Achieved:</strong> When your logged time beats the target, the card turns green with a "âœ“ Achieved!" badge.</li>
+                  <li><strong>Archive:</strong> When goals are achieved, an "Archive Completed Goals" button appears at the top. Tap it to move finished goals to a history section at the bottom. Use the â–¼ chevron to expand and view your archive.</li>
                   <li><strong>Goal Help:</strong> Tap the <em>Help</em> button in the sidebar for SMART goal-setting advice tailored to swimming.</li>
                 </ul>
-                <div className="tut-tip">💡 Set goals around qualifying cuts (visible in the Qualifications page) — e.g., "hit a BB cut in 100 Free by December".</div>
+                <div className="tut-tip">ðŸ’¡ Set goals around qualifying cuts (visible in the Qualifications page) â€” e.g., "hit a BB cut in 100 Free by December".</div>
               </div>
             </div>
 
@@ -1361,33 +1361,33 @@ export default function Settings() {
 
             {tutSlide === 5 && (
             <div className="tut-section">
-              <div className="tut-section-header tut-header--gold">🏆 Qualifications</div>
+              <div className="tut-section-header tut-header--gold">ðŸ† Qualifications</div>
               <div className="tut-body">
                 <p className="tut-desc">See where your times stand against USA Swimming qualifying standards for every age group.</p>
 
                 {/* Qualifications mockup */}
                 <div className="tut-mockup">
-                  <div className="tut-mockup-bar"><span className="tmb-dot r"/><span className="tmb-dot g"/><span className="tmb-dot y"/><span className="tmb-title">Qualifications — 17-18 · SCY</span></div>
+                  <div className="tut-mockup-bar"><span className="tmb-dot r"/><span className="tmb-dot g"/><span className="tmb-dot y"/><span className="tmb-title">Qualifications â€” 17-18 Â· SCY</span></div>
                   <div className="tut-mockup-body mock-quals-layout">
                     <div className="mock-quals-filters">
-                      <div className="mock-select">17-18 ▾</div>
-                      <div className="mock-select">SCY ▾</div>
+                      <div className="mock-select">17-18 â–¾</div>
+                      <div className="mock-select">SCY â–¾</div>
                     </div>
                     <div className="mock-quals-table">
                       <div className="mock-quals-head">
                         <span>Event</span><span>Your PR</span><span>B</span><span>BB</span><span>A</span><span>AA</span>
                       </div>
                       {[
-                        { ev:'100 Free', pr:'47.89', cuts:['✓','✓','✓','✓'], next:null },
-                        { ev:'200 Free', pr:'1:48.3', cuts:['✓','✓','✓',''], next:'AA: 1:45.09' },
-                        { ev:'100 Fly',  pr:'51.44', cuts:['✓','✓','',''],  next:'A: 49.79' },
-                        { ev:'50 Free',  pr:'21.80', cuts:['✓','✓','✓',''], next:'AA: 20.69' },
+                        { ev:'100 Free', pr:'47.89', cuts:['âœ“','âœ“','âœ“','âœ“'], next:null },
+                        { ev:'200 Free', pr:'1:48.3', cuts:['âœ“','âœ“','âœ“',''], next:'AA: 1:45.09' },
+                        { ev:'100 Fly',  pr:'51.44', cuts:['âœ“','âœ“','',''],  next:'A: 49.79' },
+                        { ev:'50 Free',  pr:'21.80', cuts:['âœ“','âœ“','âœ“',''], next:'AA: 20.69' },
                       ].map(row => (
                         <div key={row.ev} className="mock-quals-row">
                           <span className="mock-quals-event">{row.ev}</span>
                           <span className="mock-quals-pr">{row.pr}</span>
                           {row.cuts.map((c,i) => (
-                            <span key={i} className={`mock-cut-badge${c==='✓'?' mock-cut-badge--made':' mock-cut-badge--miss'}`}>{c||'-'}</span>
+                            <span key={i} className={`mock-cut-badge${c==='âœ“'?' mock-cut-badge--made':' mock-cut-badge--miss'}`}>{c||'-'}</span>
                           ))}
                         </div>
                       ))}
@@ -1399,7 +1399,7 @@ export default function Settings() {
                   <li>Filter by <strong>age group</strong> (10-Under through Senior) and <strong>course</strong> (SCY or LCM) using the dropdowns at the top.</li>
                   <li>Your current best times are automatically compared against <strong>B, BB, A, AA, AAA, and Sectional</strong> cuts.</li>
                   <li>Events where you've made a cut show a colored badge. Events still within reach show the gap to the next cut.</li>
-                  <li>Use this page to figure out which goals to set in the Goals page — aim for the next cut above where you are now.</li>
+                  <li>Use this page to figure out which goals to set in the Goals page â€” aim for the next cut above where you are now.</li>
                 </ul>
               </div>
             </div>
@@ -1408,13 +1408,13 @@ export default function Settings() {
 
             {tutSlide === 6 && (
             <div className="tut-section">
-              <div className="tut-section-header tut-header--blue">📋 Event Planning</div>
+              <div className="tut-section-header tut-header--blue">ðŸ“‹ Event Planning</div>
               <div className="tut-body">
                 <p className="tut-desc">Plan which events you'll swim at an upcoming meet and strategize your race schedule.</p>
                 <ul className="tut-list">
-                  <li>Select the events you plan to enter — they'll show your current best time and the qualifying standard side by side.</li>
+                  <li>Select the events you plan to enter â€” they'll show your current best time and the qualifying standard side by side.</li>
                   <li>See at a glance how far you are from the qualifying cut for each event.</li>
-                  <li>Add notes for your race strategy — what splits to hit, what to focus on mentally, etc.</li>
+                  <li>Add notes for your race strategy â€” what splits to hit, what to focus on mentally, etc.</li>
                   <li>Access Event Planning from the Calendar page sidebar.</li>
                 </ul>
               </div>
@@ -1424,7 +1424,7 @@ export default function Settings() {
 
             {tutSlide === 7 && (
             <div className="tut-section">
-              <div className="tut-section-header tut-header--gray">⚙️ Settings</div>
+              <div className="tut-section-header tut-header--gray">âš™ï¸ Settings</div>
               <div className="tut-body">
                 <p className="tut-desc">Personalize your account, appearance, and notification preferences.</p>
 
@@ -1459,7 +1459,7 @@ export default function Settings() {
                       </div>
                       <div className="mock-settings-card">
                         <div className="mock-field"><div className="mock-bar mock-bar--xs mock-bar--gray"/><div className="mock-input"/></div>
-                        <div className="mock-field"><div className="mock-bar mock-bar--xs mock-bar--gray"/><div className="mock-gender-row"><div className="mock-gbtn active">♂ Male</div><div className="mock-gbtn">♀ Female</div></div></div>
+                        <div className="mock-field"><div className="mock-bar mock-bar--xs mock-bar--gray"/><div className="mock-gender-row"><div className="mock-gbtn active">â™‚ Male</div><div className="mock-gbtn">â™€ Female</div></div></div>
                         <div className="mock-field"><div className="mock-bar mock-bar--xs mock-bar--gray"/><div className="mock-input"/></div>
                       </div>
                     </div>
@@ -1468,16 +1468,16 @@ export default function Settings() {
 
                 <h4 className="tut-sub">Profile Tab</h4>
                 <ul className="tut-list">
-                  <li><strong>Profile Picture:</strong> Click/tap your avatar to upload a new photo. It's automatically cropped to a square and compressed — no storage setup needed.</li>
+                  <li><strong>Profile Picture:</strong> Click/tap your avatar to upload a new photo. It's automatically cropped to a square and compressed â€” no storage setup needed.</li>
                   <li><strong>Dashboard Banner:</strong> Choose from 10 gradient presets, 8 solid colors, pick any custom color, or tap "Paint Your Own" to draw a custom banner using a brush tool. Your drawing becomes the banner background on your Dashboard.</li>
-                  <li><strong>Profile Info:</strong> Full name, gender (♂/♀), birthday (used to calculate your age on the Dashboard and Qualifications), club team, and high school.</li>
-                  <li>Tap <strong>Save Profile</strong> when done — it confirms with a green "Saved!" message.</li>
+                  <li><strong>Profile Info:</strong> Full name, gender (â™‚/â™€), birthday (used to calculate your age on the Dashboard and Qualifications), club team, and high school.</li>
+                  <li>Tap <strong>Save Profile</strong> when done â€” it confirms with a green "Saved!" message.</li>
                 </ul>
                 <h4 className="tut-sub">Account &amp; Security Tab</h4>
                 <ul className="tut-list">
-                  <li><strong>Username:</strong> Your display name — tap Save after changing it.</li>
+                  <li><strong>Username:</strong> Your display name â€” tap Save after changing it.</li>
                   <li><strong>Email:</strong> Changing your email sends a confirmation to the new address first. You must click the link in that email to confirm the change.</li>
-                  <li><strong>Phone:</strong> Optional — saved to your profile but not used for authentication.</li>
+                  <li><strong>Phone:</strong> Optional â€” saved to your profile but not used for authentication.</li>
                   <li><strong>Password:</strong> Tap "Send Reset Email" to receive a password reset link. After clicking that link, enter and confirm your new password on this page.</li>
                   <li><strong>Notifications:</strong> Toggle which in-app alerts you receive. Tap "Save Preferences" to apply your choices.</li>
                   <li><strong>Delete Account:</strong> Permanently erases your account and all data. A confirmation step prevents accidental deletion.</li>
@@ -1489,7 +1489,7 @@ export default function Settings() {
 
             {tutSlide === 8 && (
             <div className="tut-section">
-              <div className="tut-section-header tut-header--teal">⇄ Time Converter</div>
+              <div className="tut-section-header tut-header--teal">â‡„ Time Converter</div>
               <div className="tut-body">
                 <p className="tut-desc">Instantly convert swimming times between Short Course Yards (SCY), Long Course Meters (LCM), and Short Course Meters (SCM).</p>
 
@@ -1501,7 +1501,7 @@ export default function Settings() {
                       <div className="mock-tc-row">
                         <div className="mock-tc-field">
                           <div className="mock-bar mock-bar--xs mock-bar--gray" style={{marginBottom:4}}/>
-                          <div className="mock-select">100 Freestyle ▾</div>
+                          <div className="mock-select">100 Freestyle â–¾</div>
                         </div>
                       </div>
                       <div className="mock-tc-courses">
@@ -1516,13 +1516,13 @@ export default function Settings() {
                           </div>
                         ))}
                       </div>
-                      <div className="mock-tc-hint">← Enter a time in any field to convert</div>
+                      <div className="mock-tc-hint">â† Enter a time in any field to convert</div>
                     </div>
                   </div>
                 </div>
 
                 <ul className="tut-list">
-                  <li>Access it from the sidebar on the <strong>Calendar, Progress, Goals, or Media Library</strong> pages — look for the ⇄ icon.</li>
+                  <li>Access it from the sidebar on the <strong>Calendar, Progress, Goals, or Media Library</strong> pages â€” look for the â‡„ icon.</li>
                   <li>Select your event, enter a time in one course, and the conversion appears instantly.</li>
                   <li>Useful when comparing times swum in different courses (e.g., your SCY time vs. what the LCM standard is).</li>
                 </ul>
@@ -1533,22 +1533,22 @@ export default function Settings() {
 
             </div>{/* end tut-slides-viewport */}
 
-            {/* ── Bottom nav ── */}
+            {/* â”€â”€ Bottom nav â”€â”€ */}
             <div className="tut-bottom-nav">
               {tutSlide > 0 && (
                 <button className="tut-bottom-btn" onClick={() => setTutSlide(s => s - 1)}>
-                  ← {['Dashboard','Calendar','Media Library','Progress','Goals','Qualifications','Event Planning','Settings','Time Converter'][tutSlide - 1]}
+                  â† {['Dashboard','Calendar','Media Library','Progress','Goals','Qualifications','Event Planning','Settings','Time Converter'][tutSlide - 1]}
                 </button>
               )}
               <span className="tut-bottom-spacer" />
               {tutSlide < 8 && (
                 <button className="tut-bottom-btn tut-bottom-btn--next" onClick={() => setTutSlide(s => s + 1)}>
-                  {['Dashboard','Calendar','Media Library','Progress','Goals','Qualifications','Event Planning','Settings','Time Converter'][tutSlide + 1]} →
+                  {['Dashboard','Calendar','Media Library','Progress','Goals','Qualifications','Event Planning','Settings','Time Converter'][tutSlide + 1]} â†’
                 </button>
               )}
               {tutSlide === 8 && (
                 <button className="tut-bottom-btn tut-bottom-btn--done" onClick={() => setTutSlide(0)}>
-                  Start over ↺
+                  Start over â†º
                 </button>
               )}
             </div>
@@ -1561,3 +1561,4 @@ export default function Settings() {
     </div>
   )
 }
+

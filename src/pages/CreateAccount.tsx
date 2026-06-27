@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import '../App.css'
@@ -106,8 +106,8 @@ export default function CreateAccount() {
       </div>
       <header className="navbar">
         <Link to="/" className="nav-brand" style={{ textDecoration: 'none' }}>
-          <img src="/logo.svg" alt="SwimSCPlan logo" className="nav-logo-img" />
-          <span className="nav-logo">SwimSCPlan</span>
+          <img src="/logo.svg" alt="SwimSync logo" className="nav-logo-img" />
+          <span className="nav-logo">SwimSync</span>
         </Link>
         <img src="/logos/scs.svg" alt="Southern California Swimming" className="scs-logo-corner" />
       </header>
@@ -140,12 +140,12 @@ export default function CreateAccount() {
                     type="button"
                     className={`gender-btn${gender === 'male' ? ' active' : ''}`}
                     onClick={() => setGender('male')}
-                  >♂ Male</button>
+                  >â™‚ Male</button>
                   <button
                     type="button"
                     className={`gender-btn${gender === 'female' ? ' active' : ''}`}
                     onClick={() => setGender('female')}
-                  >♀ Female</button>
+                  >â™€ Female</button>
                 </div>
               </div>
             </div>
@@ -241,7 +241,7 @@ export default function CreateAccount() {
             {error && <p className="auth-error">{error}</p>}
 
             <button className="btn-primary btn-block" type="submit" disabled={loading}>
-              {loading ? 'Creating account…' : 'Create Account'}
+              {loading ? 'Creating accountâ€¦' : 'Create Account'}
             </button>
           </form>
 
@@ -254,3 +254,4 @@ export default function CreateAccount() {
     </div>
   )
 }
+
