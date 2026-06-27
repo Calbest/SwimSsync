@@ -239,6 +239,94 @@
 .import-parse-btn:hover:not(:disabled) { background: #00b4d8; }
 .import-parse-btn:disabled { opacity: 0.45; cursor: default; }
 
+/* ── Manual event mapping (SwimCloud) ── */
+.import-mapping-block {
+  margin-top: 18px;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 12px;
+  background: #f0f6ff;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.import-mapping-header {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 4px;
+}
+.import-mapping-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #002855;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.import-mapping-hint {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.5;
+}
+.import-mapping-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.import-mapping-num {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  white-space: nowrap;
+  min-width: 50px;
+}
+.import-mapping-select {
+  padding: 7px 10px;
+  border: 1.5px solid #cddff2;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  background: #fff;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.import-mapping-select:focus { border-color: #0077b6; }
+.import-mapping-select--course { width: 70px; flex-shrink: 0; }
+.import-mapping-select--event  { flex: 1; }
+.import-mapping-remove {
+  background: none;
+  border: 1.5px solid #fca5a5;
+  color: #ef4444;
+  font-size: 16px;
+  font-weight: 700;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.import-mapping-remove:hover { background: #fee2e2; }
+.import-mapping-add {
+  align-self: flex-start;
+  background: none;
+  border: 1.5px dashed #93c5fd;
+  color: #0077b6;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.import-mapping-add:hover { background: #dbeafe; border-color: #60a5fa; }
+
 /* ── Review toolbar ── */
 .import-review-toolbar {
   display: flex;

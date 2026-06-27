@@ -20,6 +20,34 @@ interface ParsedRow {
   selected: boolean
 }
 
+interface EventMapping { id: number; course: Course; eventId: string }
+
+// ─── Grouped events for dropdown ─────────────────────────────────────────────
+
+const GROUPED_EVENTS: { group: string; events: [string, string][] }[] = [
+  { group: 'Freestyle', events: [
+    ['50-free','50 Free'], ['100-free','100 Free'], ['200-free','200 Free'],
+    ['400-free','400 Free'], ['500-free','500 Free'], ['800-free','800 Free'],
+    ['1000-free','1000 Free'], ['1500-free','1500 Free'], ['1650-free','1650 Free'],
+  ]},
+  { group: 'Backstroke', events: [
+    ['50-back','50 Back'], ['100-back','100 Back'], ['200-back','200 Back'],
+  ]},
+  { group: 'Breaststroke', events: [
+    ['50-breast','50 Breast'], ['100-breast','100 Breast'], ['200-breast','200 Breast'],
+  ]},
+  { group: 'Butterfly', events: [
+    ['50-fly','50 Fly'], ['100-fly','100 Fly'], ['200-fly','200 Fly'],
+  ]},
+  { group: 'Individual Medley', events: [
+    ['100-im','100 IM'], ['200-im','200 IM'], ['400-im','400 IM'],
+  ]},
+]
+
+const EVENT_LABEL: Record<string, string> = Object.fromEntries(
+  GROUPED_EVENTS.flatMap(g => g.events)
+)
+
 // ─── Event patterns ─────────────────────────────────────────────────────────
 
 const EVENT_PATTERNS: Array<[RegExp, string, string]> = [
@@ -74,6 +102,54 @@ function extractDate(line: string): string | null {
 function toSec(t: string): number {
   const p = t.split(':')
   return p.length === 2 ? parseFloat(p[0]) * 60 + parseFloat(p[1]) : parseFloat(t)
+}
+
+// ─── Section parser (SwimCloud manual event mapping) ─────────────────────────
+// Splits pasted text on blank lines; each block is matched to an EventMapping.
+
+function parseSwimCloudSections(raw: string, mappings: EventMapping[]): ParsedRow[] {
+  const filled = mappings.filter(m => m.eventId)
+  if (filled.length === 0) return []
+
+  // Split on one-or-more blank lines
+  const sections = raw.split(/\n[ \t]*\n+/).map(s => s.trim()).filter(Boolean)
+
+  const ORDER: Course[] = ['SCY', 'LCM', 'SCM']
+  const EVENT_ORDER = GROUPED_EVENTS.flatMap(g => g.events.map(([id]) => id))
+  const map = new Map<string, { course: Course; eventId: string; eventLabel: string; entries: SwimEntry[] }>()
+
+  sections.forEach((section, i) => {
+    const mapping = filled[i]
+    if (!mapping) return
+
+    const { course, eventId } = mapping
+    const eventLabel = EVENT_LABEL[eventId] ?? eventId
+    const key = `${course}-${eventId}`
+
+    for (const line of section.split('\n').map(l => l.trim()).filter(Boolean)) {
+      if (SKIP_LINE.test(line)) continue
+      const timeMatch = line.match(TIME_RE)
+      if (!timeMatch) continue
+      const time = timeMatch[1]
+      const date = extractDate(line) ?? 'unknown'
+      const existing = map.get(key)
+      if (existing) {
+        if (!existing.entries.some(e => e.date === date && e.time === time))
+          existing.entries.push({ date, time })
+      } else {
+        map.set(key, { course, eventId, eventLabel, entries: [{ date, time }] })
+      }
+    }
+  })
+
+  return Array.from(map.entries()).map(([key, { course, eventId, eventLabel, entries }]) => {
+    const bestTime = entries.reduce((b, e) => toSec(e.time) < toSec(b.time) ? e : b).time
+    return { key, course, eventId, eventLabel, bestTime, entries, selected: true }
+  }).sort((a, b) => {
+    const ci = ORDER.indexOf(a.course) - ORDER.indexOf(b.course)
+    if (ci !== 0) return ci
+    return EVENT_ORDER.indexOf(a.eventId) - EVENT_ORDER.indexOf(b.eventId)
+  })
 }
 
 // ─── Parser (handles both copy-paste rows and multi-line PDF result sheets) ──
@@ -211,7 +287,21 @@ export default function Import() {
   const [pdfFile,     setPdfFile]     = useState<File | null>(null)
   const [pdfLoading,  setPdfLoading]  = useState(false)
   const [dragOver,    setDragOver]    = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef    = useRef<HTMLInputElement>(null)
+  const mappingCounter  = useRef(1)
+  const [eventMappings, setEventMappings] = useState<EventMapping[]>([
+    { id: 0, course: 'SCY', eventId: '' },
+  ])
+
+  function addMapping() {
+    setEventMappings(prev => [...prev, { id: mappingCounter.current++, course: 'SCY', eventId: '' }])
+  }
+  function removeMapping(id: number) {
+    setEventMappings(prev => prev.filter(m => m.id !== id))
+  }
+  function updateMapping(id: number, field: 'course' | 'eventId', value: string) {
+    setEventMappings(prev => prev.map(m => m.id === id ? { ...m, [field]: value } : m))
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -227,15 +317,20 @@ export default function Import() {
 
   function handleParse() {
     setParseError('')
-    // Text-paste sources (SwimCloud, SwimStandards, USA Swimming) are personal
-    // profile exports — all rows already belong to this swimmer, so no name
-    // filter is needed (and would break SwimCloud's section-header format).
-    const rows = parseRawText(rawText)
+    const filledMappings = eventMappings.filter(m => m.eventId)
+    const useManual = source === 'swimcloud' && filledMappings.length > 0
+
+    const rows = useManual
+      ? parseSwimCloudSections(rawText, eventMappings)
+      : parseRawText(rawText)
+
     if (rows.length === 0) {
       setParseError(
-        'No times found. Make sure your pasted text includes an event header ' +
-        '(e.g. "100 FREE SCY:") and time rows below it, or that each row has ' +
-        'an event name, a course (SCY / LCM / SCM), and a time.'
+        useManual
+          ? 'No times found. Make sure each event block in the pasted text is separated by a blank line, and the block order matches the event list above.'
+          : 'No times found. Make sure your pasted text includes an event header ' +
+            '(e.g. "100 FREE SCY:") and time rows below it, or that each row has ' +
+            'an event name, a course (SCY / LCM / SCM), and a time.'
       )
       return
     }
@@ -395,14 +490,63 @@ export default function Import() {
           )}
 
           {source === 'swimcloud' && (
-            <ol className="import-steps">
-              <li>Go to <strong>swimcloud.com</strong> and find your swimmer profile.</li>
-              <li>Click the <strong>Times</strong> tab, then open an individual event (e.g. <em>100 FREE SCY</em>).</li>
-              <li>Select and copy the table — including the event header line (e.g. <code>100 FREE SCY:</code>) and all the rows below it showing Time, Meet, and Date.</li>
-              <li>Paste below. You can paste multiple events at once — just copy each event's section one after the other.</li>
-              <li className="import-step-note"><Info size={13} /><span>The parser reads the event header line to know which event and course each row belongs to — no event name is needed on individual rows.</span></li>
-              <li className="import-step-note"><AlertTriangle size={13} /><span>Use the per-event Times tab, not the Best Times comparison table (which mixes courses on the same row).</span></li>
-            </ol>
+            <>
+              <ol className="import-steps">
+                <li>Go to <strong>swimcloud.com</strong> and find your swimmer profile.</li>
+                <li>Click the <strong>Times</strong> tab and copy the time rows for each event you want to import.</li>
+                <li>Paste them below, with a <strong>blank line between each event's block</strong>. Then use the event list below to tell the parser which event each block belongs to.</li>
+                <li className="import-step-note"><Info size={13} /><span>If your copy includes an event header line (e.g. <code>100 FREE SCY:</code>), the parser will detect it automatically — you can leave the list below empty.</span></li>
+                <li className="import-step-note"><AlertTriangle size={13} /><span>Use the per-event Times tab, not the Best Times comparison table (which mixes courses on the same row).</span></li>
+              </ol>
+
+              {/* ── Manual event mapping ── */}
+              <div className="import-mapping-block">
+                <div className="import-mapping-header">
+                  <span className="import-mapping-title">Event order</span>
+                  <span className="import-mapping-hint">Match each block (separated by a blank line) to its event. Leave empty if your data has event header lines.</span>
+                </div>
+
+                {eventMappings.map((m, idx) => (
+                  <div key={m.id} className="import-mapping-row">
+                    <span className="import-mapping-num">Block {idx + 1}</span>
+                    <select
+                      className="import-mapping-select import-mapping-select--course"
+                      value={m.course}
+                      onChange={e => updateMapping(m.id, 'course', e.target.value)}
+                    >
+                      <option value="SCY">SCY</option>
+                      <option value="LCM">LCM</option>
+                      <option value="SCM">SCM</option>
+                    </select>
+                    <select
+                      className="import-mapping-select import-mapping-select--event"
+                      value={m.eventId}
+                      onChange={e => updateMapping(m.id, 'eventId', e.target.value)}
+                    >
+                      <option value="">— pick event —</option>
+                      {GROUPED_EVENTS.map(g => (
+                        <optgroup key={g.group} label={g.group}>
+                          {g.events.map(([id, label]) => (
+                            <option key={id} value={id}>{label}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                    {eventMappings.length > 1 && (
+                      <button
+                        className="import-mapping-remove"
+                        onClick={() => removeMapping(m.id)}
+                        aria-label="Remove"
+                      >×</button>
+                    )}
+                  </div>
+                ))}
+
+                <button className="import-mapping-add" onClick={addMapping}>
+                  + Add event block
+                </button>
+              </div>
+            </>
           )}
 
           {source === 'pdf' && (
