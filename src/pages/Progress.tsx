@@ -348,8 +348,10 @@ export default function Progress() {
   const [showTC,       setShowTC]       = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      const user = data.session?.user
+    // getUser() hits the server for fresh metadata — avoids stale cached JWT
+    // after an import that updated timeHistory via updateUser().
+    supabase.auth.getUser().then(({ data }) => {
+      const user = data?.user
       if (!user) { navigate('/'); return }
       setHistory(user.user_metadata?.timeHistory ?? {})
       setDashTimes(user.user_metadata?.times ?? {})

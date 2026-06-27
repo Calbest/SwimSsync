@@ -390,9 +390,13 @@ export default function Import() {
     const toSave = parsed.filter(r => r.selected)
     if (toSave.length === 0) return
     setSaving(true)
-    const { data } = await supabase.auth.getSession()
-    const user = data.session?.user
-    if (!user) { navigate('/'); return }
+    setParseError('')
+
+    // Use getUser() — not getSession() — so we read the latest metadata from
+    // the server, not a potentially stale cached JWT.
+    const { data: userData, error: userErr } = await supabase.auth.getUser()
+    const user = userData?.user
+    if (userErr || !user) { navigate('/'); return }
 
     const mergedTimes: Record<string, string> = { ...(user.user_metadata?.times ?? {}) }
     const mergedHistory: Record<string, SwimEntry[]> = { ...(user.user_metadata?.timeHistory ?? {}) }
@@ -408,8 +412,14 @@ export default function Import() {
       mergedHistory[row.key] = hist
     }
 
-    await supabase.auth.updateUser({ data: { times: mergedTimes, timeHistory: mergedHistory } })
+    const { error: saveErr } = await supabase.auth.updateUser({
+      data: { times: mergedTimes, timeHistory: mergedHistory },
+    })
     setSaving(false)
+    if (saveErr) {
+      setParseError(`Save failed: ${saveErr.message}. Try importing fewer events at once.`)
+      return
+    }
     navigate('/dashboard')
   }
 
