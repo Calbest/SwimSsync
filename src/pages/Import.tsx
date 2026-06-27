@@ -392,11 +392,9 @@ export default function Import() {
     setSaving(true)
     setParseError('')
 
-    // Use getUser() — not getSession() — so we read the latest metadata from
-    // the server, not a potentially stale cached JWT.
-    const { data: userData, error: userErr } = await supabase.auth.getUser()
-    const user = userData?.user
-    if (userErr || !user) { navigate('/'); return }
+    const { data: sessionData } = await supabase.auth.getSession()
+    const user = sessionData.session?.user
+    if (!user) { navigate('/'); return }
 
     const mergedTimes: Record<string, string> = { ...(user.user_metadata?.times ?? {}) }
     const mergedHistory: Record<string, SwimEntry[]> = { ...(user.user_metadata?.timeHistory ?? {}) }

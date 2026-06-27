@@ -611,6 +611,7 @@ export default function Dashboard() {
             dob:          meta.dob         || null,
             banner_type:  meta.bannerType  || null,
             banner_value: meta.bannerValue || null,
+            updated_at:   new Date().toISOString(),
           }
           upsertProfile(myProfile)
 
