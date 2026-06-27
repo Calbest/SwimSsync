@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, AlertTriangle, CheckCircle2, Info } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, CheckCircle2, Info, FileText, Upload } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import './Import.css'
 
@@ -47,8 +47,8 @@ const EVENT_PATTERNS: Array<[RegExp, string, string]> = [
 ]
 
 const COURSE_RE = /\b(SCY|LCM|SCM)\b/i
-const TIME_RE   = /\b(\d{1,2}:\d{2}\.\d{2}|\d{1,2}\.\d{2})\b/
-const SKIP_LINE = /^(event|course|standard|meet name|club|lsc|date|age|time\b|swimmer|name\b)/i
+const TIME_RE   = /\b(\d{1,2}:\d{2}\.\d{2}|\d{2}\.\d{2})\b/
+const SKIP_LINE = /^(event\s+#|course|standard|meet name|club\b|lsc\b|^date\b|^time\b|swimmer|^name\b|^place\b|^pl\b|^rank\b|^#\b|finals\s+time|seed\s+time|prelim)/i
 
 const MONTH_NAMES: Record<string, string> = {
   jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',
@@ -56,19 +56,15 @@ const MONTH_NAMES: Record<string, string> = {
 }
 
 function extractDate(line: string): string | null {
-  // MM/DD/YYYY or M/D/YYYY
   let m = line.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/)
   if (m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`
 
-  // YYYY-MM-DD
   m = line.match(/\b(\d{4})-(\d{2})-(\d{2})\b/)
   if (m) return `${m[1]}-${m[2]}-${m[3]}`
 
-  // "Jan 15, 2025" or "January 15, 2025"
   m = line.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2}),?\s+(\d{4})\b/i)
   if (m) return `${m[3]}-${MONTH_NAMES[m[1].toLowerCase().slice(0,3)]}-${m[2].padStart(2,'0')}`
 
-  // "Jan 2025" or "January 2025" (no day — use 01)
   m = line.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{4})\b/i)
   if (m) return `${m[2]}-${MONTH_NAMES[m[1].toLowerCase().slice(0,3)]}-01`
 
@@ -80,34 +76,63 @@ function toSec(t: string): number {
   return p.length === 2 ? parseFloat(p[0]) * 60 + parseFloat(p[1]) : parseFloat(t)
 }
 
-function parseRawText(raw: string): ParsedRow[] {
+// ─── Parser (handles both copy-paste rows and multi-line PDF result sheets) ──
+// Strategy:
+//   1. Each line is checked for event/course/time.
+//   2. When an event or course is found, it becomes the "sticky" context.
+//   3. When a time is found, it's attributed to the sticky event+course.
+//      If the same line also has its own event/course, those take precedence.
+//   4. This makes Hy-Tek / CTS / Meet Mobile PDF formats work out of the box.
+
+function parseRawText(raw: string, targetName?: string): ParsedRow[] {
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean)
   const map = new Map<string, { course: Course; eventId: string; eventLabel: string; entries: SwimEntry[] }>()
+
+  let stickyEvent: [string, string] | null = null  // [id, label]
+  let stickyCourse: Course | null = null
+
+  // Normalise the target name to tokens for matching swimmer rows
+  const nameTokens = targetName
+    ? targetName.toLowerCase().split(/\s+/).filter(Boolean)
+    : null
 
   for (const line of lines) {
     if (SKIP_LINE.test(line)) continue
 
-    const timeMatch   = line.match(TIME_RE)
+    // Update sticky event if this line mentions one
+    for (const [re, id, label] of EVENT_PATTERNS) {
+      if (re.test(line)) { stickyEvent = [id, label]; break }
+    }
+
+    // Update sticky course if this line mentions one
+    const courseMatch = line.match(COURSE_RE)
+    if (courseMatch) stickyCourse = courseMatch[1].toUpperCase() as Course
+
+    const timeMatch = line.match(TIME_RE)
     if (!timeMatch) continue
 
-    const courseMatch = line.match(COURSE_RE)
-    if (!courseMatch) continue
-    const course = courseMatch[1].toUpperCase() as Course
+    // Skip header / column-label rows that happen to contain a number
+    if (!stickyEvent && !stickyCourse) continue
 
-    let foundEvent: [string, string] | null = null
-    for (const [re, id, label] of EVENT_PATTERNS) {
-      if (re.test(line)) { foundEvent = [id, label]; break }
+    // If we know the swimmer's name, only take rows that contain their name
+    // (helps with multi-swimmer result sheets)
+    if (nameTokens && nameTokens.length >= 2) {
+      const lower = line.toLowerCase()
+      const hasName = nameTokens.every(tok => lower.includes(tok))
+      if (!hasName) continue
     }
-    if (!foundEvent) continue
 
-    const [eventId, eventLabel] = foundEvent
+    const event  = stickyEvent  ?? null
+    const course = stickyCourse ?? null
+    if (!event || !course) continue
+
+    const [eventId, eventLabel] = event
     const time = timeMatch[1]
     const key  = `${course}-${eventId}`
     const date = extractDate(line) ?? 'unknown'
 
     const existing = map.get(key)
     if (existing) {
-      // Only add if not a duplicate date+time pair
       if (!existing.entries.some(e => e.date === date && e.time === time)) {
         existing.entries.push({ date, time })
       }
@@ -129,32 +154,76 @@ function parseRawText(raw: string): ParsedRow[] {
   })
 }
 
+// ─── PDF extraction ─────────────────────────────────────────────────────────
+
+async function extractPdfText(file: File): Promise<string> {
+  const pdfjsLib = await import('pdfjs-dist')
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url,
+  ).href
+
+  const buffer    = await file.arrayBuffer()
+  const loadingTask = pdfjsLib.getDocument({ data: buffer })
+  const pdf       = await loadingTask.promise
+
+  const textParts: string[] = []
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page    = await pdf.getPage(i)
+    const content = await page.getTextContent()
+    // Join items on the same line with a space; separate lines with newline
+    let prevY: number | null = null
+    const lineParts: string[] = []
+    for (const item of content.items) {
+      if (!('str' in item)) continue
+      const y = Math.round((item as { transform: number[] }).transform[5])
+      if (prevY !== null && Math.abs(y - prevY) > 2) {
+        textParts.push(lineParts.join(' '))
+        lineParts.length = 0
+      }
+      lineParts.push((item as { str: string }).str)
+      prevY = y
+    }
+    if (lineParts.length) textParts.push(lineParts.join(' '))
+  }
+  return textParts.join('\n')
+}
+
 // ─── Component ─────────────────────────────────────────────────────────────
 
 type Step   = 'paste' | 'review'
-type Source = 'swimstandards' | 'usaswim' | 'swimcloud'
+type Source = 'swimstandards' | 'usaswim' | 'swimcloud' | 'pdf'
 
 export default function Import() {
   const navigate = useNavigate()
-  const [step,       setStep]       = useState<Step>('paste')
-  const [source,     setSource]     = useState<Source>('swimstandards')
-  const [rawText,    setRawText]    = useState('')
-  const [parsed,     setParsed]     = useState<ParsedRow[]>([])
-  const [existing,   setExisting]   = useState<Record<string, string>>({})
-  const [parseError, setParseError] = useState('')
-  const [saving,     setSaving]     = useState(false)
+  const [step,        setStep]        = useState<Step>('paste')
+  const [source,      setSource]      = useState<Source>('swimcloud')
+  const [rawText,     setRawText]     = useState('')
+  const [swimmerName, setSwimmerName] = useState('')
+  const [parsed,      setParsed]      = useState<ParsedRow[]>([])
+  const [existing,    setExisting]    = useState<Record<string, string>>({})
+  const [parseError,  setParseError]  = useState('')
+  const [saving,      setSaving]      = useState(false)
+  const [pdfFile,     setPdfFile]     = useState<File | null>(null)
+  const [pdfLoading,  setPdfLoading]  = useState(false)
+  const [dragOver,    setDragOver]    = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       const user = data.session?.user
       if (!user) { navigate('/'); return }
       setExisting(user.user_metadata?.times ?? {})
+      // Pre-fill swimmer name from profile
+      const meta = user.user_metadata ?? {}
+      const full  = (meta.full_name as string) ?? ''
+      if (full) setSwimmerName(full)
     })
   }, [navigate])
 
   function handleParse() {
     setParseError('')
-    const rows = parseRawText(rawText)
+    const rows = parseRawText(rawText, swimmerName.trim() || undefined)
     if (rows.length === 0) {
       setParseError(
         'No times found. Make sure your copied text includes an event name, ' +
@@ -164,6 +233,46 @@ export default function Import() {
     }
     setParsed(rows)
     setStep('review')
+  }
+
+  async function handlePdfParse() {
+    if (!pdfFile) return
+    setPdfLoading(true)
+    setParseError('')
+    try {
+      const text = await extractPdfText(pdfFile)
+      const rows = parseRawText(text, swimmerName.trim() || undefined)
+      if (rows.length === 0) {
+        setParseError(
+          'No times found in this PDF. Make sure it\'s a swim meet result sheet and that ' +
+          'the event names and course (SCY/LCM/SCM) are visible in the document. ' +
+          'If the PDF has your name, enter it in the "Swimmer name" field so only your rows are imported.'
+        )
+        setPdfLoading(false)
+        return
+      }
+      setParsed(rows)
+      setStep('review')
+    } catch (err) {
+      console.error(err)
+      setParseError('Could not read this PDF. Make sure it\'s not password-protected and contains selectable text (not a scanned image).')
+    }
+    setPdfLoading(false)
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files[0]
+    if (file?.type === 'application/pdf') {
+      setPdfFile(file)
+      setParseError('')
+    }
+  }
+
+  function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) { setPdfFile(file); setParseError('') }
   }
 
   function toggleRow(key: string) {
@@ -186,10 +295,7 @@ export default function Import() {
     const mergedHistory: Record<string, SwimEntry[]> = { ...(user.user_metadata?.timeHistory ?? {}) }
 
     for (const row of toSave) {
-      // PR = fastest of all imported entries for this event
       mergedTimes[row.key] = row.bestTime
-
-      // Merge all entries into history (deduplicate by date+time)
       const hist = [...(mergedHistory[row.key] ?? [])]
       for (const entry of row.entries) {
         if (!hist.some(e => e.date === entry.date && e.time === entry.time)) {
@@ -233,11 +339,11 @@ export default function Import() {
         <div className="import-notice import-notice--recommend">
           <span className="import-recommend-badge">Recommended</span>
           <div>
-            <strong>Use Swimcloud for your full career history.</strong> Go to swimcloud.com, search your name, open your profile's <em>Times</em> tab, and copy the full table. Swimcloud has the most complete record of every meet swim and includes dates on every row.
+            <strong>Use Swimcloud for your full career history.</strong> Go to swimcloud.com, search your name, open your profile's <em>Times</em> tab, and copy the full table.
           </div>
         </div>
 
-        {/* ── Source tabs + instructions ── */}
+        {/* ── Source tabs ── */}
         <div className="import-card">
           <div className="import-source-tabs">
             <button
@@ -252,6 +358,10 @@ export default function Import() {
               className={`import-source-tab${source === 'swimcloud' ? ' active' : ''}`}
               onClick={() => setSource('swimcloud')}
             >Swimcloud</button>
+            <button
+              className={`import-source-tab import-source-tab--pdf${source === 'pdf' ? ' active' : ''}`}
+              onClick={() => setSource('pdf')}
+            ><FileText size={13} /> PDF Results</button>
           </div>
 
           {source === 'swimstandards' && (
@@ -259,82 +369,144 @@ export default function Import() {
               <li>Go to <strong>swimstandards.com/swimmer/[your-name]</strong> — search for your profile if you don't have the link.</li>
               <li>Scroll down to the <strong>Progression</strong> section. Each event has a table showing every recorded swim with its date and time.</li>
               <li>Click inside the progression table for the event you want, then <strong>Select All</strong> (Ctrl+A / Cmd+A) and <strong>Copy</strong> (Ctrl+C / Cmd+C).</li>
-              <li>Paste below. Repeat for each event, or open multiple events and copy them all at once if the site allows it.</li>
-              <li className="import-step-note">
-                <Info size={13} />
-                Swim Standards includes the date for each swim — these will be automatically detected and saved to your Progress Tracker so your chart shows real improvement over time.
-              </li>
-              <li className="import-step-note">
-                <AlertTriangle size={13} />
-                Make sure each row has the <strong>course</strong> (SCY, LCM, or SCM) visible in the copied text. If the course isn't on the row, that swim will be skipped.
-              </li>
+              <li>Paste below. Repeat for each event, or open multiple events and copy them all at once.</li>
+              <li className="import-step-note"><Info size={13} />Swim Standards includes the date for each swim — these will be automatically detected.</li>
+              <li className="import-step-note"><AlertTriangle size={13} />Make sure each row has the <strong>course</strong> (SCY, LCM, or SCM) visible.</li>
             </ol>
           )}
 
           {source === 'usaswim' && (
             <ol className="import-steps">
               <li>Go to <strong>usaswimming.org</strong> → Times → Individual Times Search</li>
-              <li>Enter your first and last name. Set <strong>Course</strong> to <em>All Courses</em> so SCY, LCM, and SCM all appear.</li>
-              <li>Click <strong>Search</strong> and wait for the results table to load.</li>
-              <li>Click anywhere inside the results table, then <strong>Select All</strong> (Ctrl+A / Cmd+A).</li>
+              <li>Enter your first and last name. Set <strong>Course</strong> to <em>All Courses</em>.</li>
+              <li>Click <strong>Search</strong>, then click inside the results table and Select All (Ctrl+A / Cmd+A).</li>
               <li>Copy (Ctrl+C / Cmd+C), then paste in the box below.</li>
-              <li className="import-step-note">
-                <Info size={13} />
-                USA Swimming shows every recorded swim with dates — all of them will be imported into your Progress Tracker.
-              </li>
-              <li className="import-step-note">
-                <AlertTriangle size={13} />
-                You may need to be <strong>logged in</strong> to USA Swimming to see your full history.
-              </li>
+              <li className="import-step-note"><Info size={13} />USA Swimming shows every recorded swim with dates.</li>
+              <li className="import-step-note"><AlertTriangle size={13} />You may need to be <strong>logged in</strong> to USA Swimming to see your full history.</li>
             </ol>
           )}
 
           {source === 'swimcloud' && (
             <ol className="import-steps">
               <li>Go to <strong>swimcloud.com</strong> and find your swimmer profile.</li>
-              <li>Click the <strong>Times</strong> tab (the full meet-by-meet list, not the Best Times summary table).</li>
+              <li>Click the <strong>Times</strong> tab (the full meet-by-meet list, not the Best Times summary).</li>
               <li>Select all text in the times table (Ctrl+A / Cmd+A inside the table).</li>
               <li>Copy (Ctrl+C / Cmd+C), then paste in the box below.</li>
-              <li className="import-step-note">
-                <AlertTriangle size={13} />
-                <span>Use the individual Times tab (one row per swim) — the Best Times comparison table puts SCY and LCM on the same row and confuses the parser.</span>
-              </li>
-              <li className="import-step-note">
-                <AlertTriangle size={13} />
-                <span>Your Swimcloud profile must be <strong>public</strong>, or you must be logged in, to see times.</span>
-              </li>
+              <li className="import-step-note"><AlertTriangle size={13} /><span>Use the individual Times tab — the Best Times comparison table puts SCY and LCM on the same row and confuses the parser.</span></li>
             </ol>
           )}
+
+          {source === 'pdf' && (
+            <div className="import-pdf-instructions">
+              <p>Upload any <strong>swim meet result sheet PDF</strong> — Hy-Tek, CTS, Meet Mobile, or any standard USA Swimming results file. The parser reads the event headers and pulls out your times.</p>
+              <ol className="import-steps">
+                <li>Get your meet result PDF from <strong>Meet Mobile</strong>, your <strong>club's website</strong>, or the meet host's results page.</li>
+                <li>Enter your name below so the parser only pulls <em>your</em> rows from a full-field result sheet.</li>
+                <li>Drop the PDF in the zone below (or click Browse) and hit <strong>Parse PDF</strong>.</li>
+                <li className="import-step-note"><AlertTriangle size={13} />The PDF must contain <strong>selectable text</strong> — scanned images cannot be read. If you can highlight text in the PDF, it will work.</li>
+                <li className="import-step-note"><AlertTriangle size={13} />Password-protected PDFs cannot be read.</li>
+              </ol>
+            </div>
+          )}
         </div>
 
-        {/* ── Paste area ── */}
-        <div className="import-card">
-          <label className="import-label">Paste your times here</label>
-          <textarea
-            className="import-textarea"
-            placeholder="Paste your copied times here…
+        {/* ── Swimmer name (shown for PDF, optional for others) ── */}
+        {source === 'pdf' && (
+          <div className="import-card">
+            <label className="import-label">Your name (as it appears in the results)</label>
+            <input
+              className="import-name-input"
+              type="text"
+              placeholder="e.g. Smith, John or John Smith"
+              value={swimmerName}
+              onChange={e => setSwimmerName(e.target.value)}
+            />
+            <p className="import-name-hint">This filters the PDF to only import rows matching your name. Leave blank to import all times found.</p>
+          </div>
+        )}
+
+        {/* ── PDF drop zone ── */}
+        {source === 'pdf' && (
+          <div className="import-card">
+            <label className="import-label">Upload PDF result sheet</label>
+            <div
+              className={`import-dropzone${dragOver ? ' import-dropzone--over' : ''}${pdfFile ? ' import-dropzone--has-file' : ''}`}
+              onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,application/pdf"
+                style={{ display: 'none' }}
+                onChange={handleFileInput}
+              />
+              {pdfFile ? (
+                <>
+                  <FileText size={28} className="import-dropzone-icon import-dropzone-icon--file" />
+                  <p className="import-dropzone-filename">{pdfFile.name}</p>
+                  <p className="import-dropzone-sub">{(pdfFile.size / 1024).toFixed(0)} KB — click to change</p>
+                </>
+              ) : (
+                <>
+                  <Upload size={28} className="import-dropzone-icon" />
+                  <p className="import-dropzone-label">Drop PDF here or click to browse</p>
+                  <p className="import-dropzone-sub">Hy-Tek, CTS, Meet Mobile result sheets supported</p>
+                </>
+              )}
+            </div>
+
+            {parseError && (
+              <p className="import-error">
+                <AlertTriangle size={14} />
+                {parseError}
+              </p>
+            )}
+
+            <div className="import-actions">
+              <button
+                className="import-parse-btn"
+                onClick={handlePdfParse}
+                disabled={!pdfFile || pdfLoading}
+              >
+                {pdfLoading ? 'Reading PDF…' : 'Parse PDF'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Paste area (text sources) ── */}
+        {source !== 'pdf' && (
+          <div className="import-card">
+            <label className="import-label">Paste your times here</label>
+            <textarea
+              className="import-textarea"
+              placeholder="Paste your copied times here…
 
 Each row should contain an event name (e.g. '100 Freestyle'), a course (SCY / LCM / SCM), and a time (e.g. 52.34 or 1:52.34). Dates are detected automatically when present."
-            value={rawText}
-            onChange={e => { setRawText(e.target.value); setParseError('') }}
-            rows={12}
-          />
-          {parseError && (
-            <p className="import-error">
-              <AlertTriangle size={14} />
-              {parseError}
-            </p>
-          )}
-          <div className="import-actions">
-            <button
-              className="import-parse-btn"
-              onClick={handleParse}
-              disabled={!rawText.trim()}
-            >
-              Parse Times
-            </button>
+              value={rawText}
+              onChange={e => { setRawText(e.target.value); setParseError('') }}
+              rows={12}
+            />
+            {parseError && (
+              <p className="import-error">
+                <AlertTriangle size={14} />
+                {parseError}
+              </p>
+            )}
+            <div className="import-actions">
+              <button
+                className="import-parse-btn"
+                onClick={handleParse}
+                disabled={!rawText.trim()}
+              >
+                Parse Times
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
     </div>
@@ -425,7 +597,7 @@ Each row should contain an event name (e.g. '100 Freestyle'), a course (SCY / LC
 
           <div className="import-actions import-actions--review">
             <button className="import-cancel-btn" onClick={() => setStep('paste')}>
-              ← Edit Paste
+              ← Edit
             </button>
             <button
               className="import-save-btn"

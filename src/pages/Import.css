@@ -385,6 +385,78 @@
 .import-save-btn:hover:not(:disabled) { background: #00b4d8; }
 .import-save-btn:disabled { opacity: 0.45; cursor: default; }
 
+/* ── PDF tab accent ── */
+.import-source-tab--pdf { display: inline-flex; align-items: center; gap: 5px; }
+
+/* ── PDF instructions ── */
+.import-pdf-instructions p {
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+
+/* ── Name input ── */
+.import-name-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #0f172a;
+  background: #fff;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.import-name-input:focus { outline: none; border-color: #0078d4; }
+.import-name-hint {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 6px 0 0;
+}
+
+/* ── Drop zone ── */
+.import-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.import-dropzone:hover,
+.import-dropzone--over { border-color: #0078d4; background: #eff6ff; }
+.import-dropzone--has-file { border-color: #059669; background: #f0fdf4; border-style: solid; }
+
+.import-dropzone-icon { color: #94a3b8; }
+.import-dropzone-icon--file { color: #059669; }
+
+.import-dropzone-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #334155;
+  margin: 0;
+}
+.import-dropzone-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+}
+.import-dropzone-filename {
+  font-size: 14px;
+  font-weight: 700;
+  color: #065f46;
+  margin: 0;
+  word-break: break-all;
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .import-header { padding: 16px 20px; }
