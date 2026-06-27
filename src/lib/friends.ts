@@ -12,15 +12,7 @@ export interface Profile {
   updated_at: string
 }
 
-export type FriendshipStatus = 'pending' | 'accepted'
-
-export interface Friendship {
-  id: number
-  requester_id: string
-  addressee_id: string
-  status: FriendshipStatus
-  created_at: string
-}
+// ── Profile ───────────────────────────────────────────────────────────────────
 
 export async function upsertProfile(profile: Omit<Profile, 'updated_at'>) {
   return supabase.from('profiles').upsert(
@@ -32,10 +24,10 @@ export async function upsertProfile(profile: Omit<Profile, 'updated_at'>) {
 export async function searchProfiles(query: string, excludeId: string) {
   return supabase
     .from('profiles')
-    .select('id, username, full_name, avatar_url, club_team, gender')
+    .select('id, username, full_name, avatar_url, club_team, gender, times')
     .ilike('username', `%${query}%`)
     .neq('id', excludeId)
-    .limit(8)
+    .limit(12)
 }
 
 export async function getProfile(userId: string) {
@@ -46,42 +38,48 @@ export async function getProfile(userId: string) {
     .single<Profile>()
 }
 
-export async function getMyFriendships() {
-  return supabase
-    .from('friendships')
-    .select('*')
-    .returns<Friendship[]>()
-}
+// ── Follows ───────────────────────────────────────────────────────────────────
 
-export async function getFriendProfiles(friendIds: string[]) {
-  if (!friendIds.length) return { data: [] as Profile[], error: null }
-  return supabase
-    .from('profiles')
-    .select('*')
-    .in('id', friendIds)
-    .returns<Profile[]>()
-}
-
-export async function sendFriendRequest(addresseeId: string) {
+export async function follow(followingId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: new Error('Not signed in') }
-  return supabase.from('friendships').insert({
-    requester_id: user.id,
-    addressee_id: addresseeId,
-  })
+  return supabase.from('follows').insert({ follower_id: user.id, following_id: followingId })
 }
 
-export async function acceptFriendRequest(friendshipId: number) {
-  return supabase
-    .from('friendships')
-    .update({ status: 'accepted' })
-    .eq('id', friendshipId)
+export async function unfollow(followingId: string) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: new Error('Not signed in') }
+  return supabase.from('follows').delete()
+    .eq('follower_id', user.id)
+    .eq('following_id', followingId)
 }
 
-export async function declineFriendRequest(friendshipId: number) {
-  return supabase.from('friendships').delete().eq('id', friendshipId)
+export async function getFollowers(userId: string): Promise<{ data: Profile[]; error: unknown }> {
+  const { data: rows, error } = await supabase
+    .from('follows')
+    .select('follower_id')
+    .eq('following_id', userId)
+  if (error || !rows?.length) return { data: [], error }
+  const ids = rows.map((r: { follower_id: string }) => r.follower_id)
+  const res = await supabase.from('profiles').select('*').in('id', ids)
+  return { data: (res.data ?? []) as Profile[], error: res.error }
 }
 
-export async function removeFriend(friendshipId: number) {
-  return supabase.from('friendships').delete().eq('id', friendshipId)
+export async function getFollowing(userId: string): Promise<{ data: Profile[]; error: unknown }> {
+  const { data: rows, error } = await supabase
+    .from('follows')
+    .select('following_id')
+    .eq('follower_id', userId)
+  if (error || !rows?.length) return { data: [], error }
+  const ids = rows.map((r: { following_id: string }) => r.following_id)
+  const res = await supabase.from('profiles').select('*').in('id', ids)
+  return { data: (res.data ?? []) as Profile[], error: res.error }
+}
+
+export async function getFollowCounts(userId: string) {
+  const [{ count: followers }, { count: following }] = await Promise.all([
+    supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', userId),
+    supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', userId),
+  ])
+  return { followers: followers ?? 0, following: following ?? 0 }
 }

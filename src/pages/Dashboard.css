@@ -247,27 +247,6 @@ button:active { transform: scale(0.96) !important; }
   color: #ffffff;
 }
 
-.dash-friends {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(139,92,246,0.12);
-  border: 1px solid rgba(139,92,246,0.3);
-  color: #c4b5fd;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 9px 12px;
-  border-radius: 8px;
-  width: 100%;
-  margin-bottom: 8px;
-  transition: background 0.15s, color 0.15s;
-}
-.dash-friends:hover {
-  background: rgba(139,92,246,0.22);
-  color: #ffffff;
-}
-
 .dash-import {
   display: flex;
   align-items: center;
@@ -581,6 +560,32 @@ button:active { transform: scale(0.96) !important; }
   color: #64748b;
   margin: 0;
   font-weight: 700;
+}
+
+.dash-follow-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+}
+
+.dash-follow-stat {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  color: #475569;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.12s;
+}
+.dash-follow-stat:hover { color: #002855; text-decoration: underline; }
+.dash-follow-stat strong { font-weight: 800; color: #0f172a; }
+
+.dash-follow-dot {
+  color: #94a3b8;
+  font-size: 12px;
+  pointer-events: none;
 }
 
 /* Sign-out shortcut in profile bar */

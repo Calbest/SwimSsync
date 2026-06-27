@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Pencil, Check, User, LogOut, Settings, Trophy, Target, Upload, TrendingUp, X, CalendarCheck, Bell, Star, Clock, Zap, Film, Users } from 'lucide-react'
+import { Pencil, Check, User, LogOut, Settings, Trophy, Target, Upload, TrendingUp, X, CalendarCheck, Bell, Star, Clock, Zap, Film } from 'lucide-react'
 import TimeConverterPopup from '../components/TimeConverterPopup'
 import { supabase } from '../lib/supabase'
-import { upsertProfile } from '../lib/friends'
+import { upsertProfile, getFollowCounts } from '../lib/friends'
 import type { Goal } from './Goals'
 import { playClick, playSave, playNavigate } from '../lib/sounds'
 import './Dashboard.css'
@@ -443,6 +443,7 @@ export default function Dashboard() {
   const [notifPrefs,     setNotifPrefs]     = useState<Record<string, boolean>>({ motivationalQuotes: true })
   const [goals,          setGoals]          = useState<Goal[]>([])
   const [calAttendance,  setCalAttendance]  = useState<Record<string, unknown>>({})
+  const [followCounts,   setFollowCounts]   = useState({ followers: 0, following: 0 })
   const [readIds,     setReadIds]     = useState<Set<string>>(() => {
     try { return new Set(JSON.parse(localStorage.getItem('sw_read_notifs') ?? '[]')) }
     catch { return new Set() }
@@ -506,6 +507,7 @@ export default function Dashboard() {
       if (user.user_metadata?.notifPrefs) setNotifPrefs(user.user_metadata.notifPrefs)
       setGoals(user.user_metadata?.goals || [])
       setCalAttendance(user.user_metadata?.calAttendance || {})
+      getFollowCounts(user.id).then(counts => setFollowCounts(counts))
       // Ensure public profile row exists
       upsertProfile({
         id:          user.id,
@@ -684,11 +686,6 @@ export default function Dashboard() {
           <span>Media Library</span>
         </button>
 
-        <button className="dash-friends" onClick={() => { playNavigate(); navigate('/friends') }}>
-          <Users size={16} />
-          <span>Friends</span>
-        </button>
-
         </nav>
       </aside>
 
@@ -749,6 +746,15 @@ export default function Dashboard() {
                   'Southern California Swimming',
                 ].filter(Boolean).join(' · ')}
               </p>
+              <div className="dash-follow-stats">
+                <button className="dash-follow-stat" onClick={() => navigate('/friends?tab=followers')}>
+                  <strong>{followCounts.followers}</strong> followers
+                </button>
+                <span className="dash-follow-dot">·</span>
+                <button className="dash-follow-stat" onClick={() => navigate('/friends?tab=following')}>
+                  <strong>{followCounts.following}</strong> following
+                </button>
+              </div>
             </div>
             <button
               className="dash-profile-signout"
@@ -956,10 +962,6 @@ export default function Dashboard() {
         <button className="dash-mobile-nav-btn" onClick={() => { playNavigate(); navigate('/calendar') }}>
           <CalendarCheck size={20} />
           Calendar
-        </button>
-        <button className="dash-mobile-nav-btn" onClick={() => { playNavigate(); navigate('/friends') }}>
-          <Users size={20} />
-          Friends
         </button>
       </nav>
     </div>
