@@ -802,6 +802,38 @@
   max-width: 760px;
 }
 
+/* ── Replay onboarding ── */
+.tut-replay-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #f0f6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+.tut-replay-text {
+  flex: 1;
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.5;
+}
+.tut-replay-btn {
+  flex-shrink: 0;
+  background: #002855;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.tut-replay-btn:hover { background: #003b7a; }
+
 /* ── Carousel nav bar ── */
 .tut-carousel-nav {
   display: flex;

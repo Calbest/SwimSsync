@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Camera, User, RotateCcw, Eraser, Save } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import OnboardingModal from '../components/OnboardingModal'
 import './Settings.css'
 
 type SaveStatus  = 'idle' | 'saving' | 'saved' | 'error'
@@ -80,8 +81,9 @@ export default function Settings() {
   const [isEraser,     setIsEraser]     = useState(false)
 
   // Active tab
-  const [settingsTab, setSettingsTab] = useState<'profile' | 'account' | 'tutorial'>('profile')
-  const [tutSlide,    setTutSlide]    = useState(0)
+  const [settingsTab,    setSettingsTab]    = useState<'profile' | 'account' | 'tutorial'>('profile')
+  const [tutSlide,       setTutSlide]       = useState(0)
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   // Notifications
   const [notifPrefs, setNotifPrefs] = useState({
@@ -389,6 +391,12 @@ export default function Settings() {
 
   return (
     <div className="settings-page">
+      {showOnboarding && (
+        <OnboardingModal
+          name={fullName.split(' ')[0]}
+          onDone={() => setShowOnboarding(false)}
+        />
+      )}
       <div className="settings-header">
         <div className="settings-header-top">
           <button className="settings-back" onClick={() => navigate('/dashboard')}>
@@ -982,6 +990,19 @@ export default function Settings() {
           const next  = () => setTutSlide(s => (s + 1) % total)
           return (
           <div className="tutorial-wrap">
+
+            {/* ── Replay onboarding ── */}
+            <div className="tut-replay-row">
+              <div className="tut-replay-text">
+                <strong>New to SwimSync?</strong> Relaunch the interactive walkthrough.
+              </div>
+              <button
+                className="tut-replay-btn"
+                onClick={() => setShowOnboarding(true)}
+              >
+                ▶ Start tour
+              </button>
+            </div>
 
             {/* ── Carousel nav ── */}
             <div className="tut-carousel-nav">
