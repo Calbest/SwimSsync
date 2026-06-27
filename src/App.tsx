@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
+import { Search, Loader } from 'lucide-react'
 import { supabase } from './lib/supabase'
+import { searchProfiles } from './lib/friends'
+import type { Profile as SwimmerProfile } from './lib/friends'
 import compareTimesImg from './Assets/CompareTimes.png'
 import trackProgressImg from './Assets/TrackProgress.png'
 import planEventsImg from './Assets/PlanEvents.png'
@@ -308,11 +311,54 @@ const NAV_SECTIONS = [
 
 const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 
+// ── Search helpers ────────────────────────────────────────────────────────────
+
+function initials(name: string | null, username: string) {
+  const src = name || username
+  return src.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase()
+}
+
+function avatarBg(userId: string) {
+  const palette = ['#0077b6','#0096c7','#00b4d8','#023e8a','#0369a1','#0891b2','#005f73']
+  let h = 0
+  for (let i = 0; i < userId.length; i++) h = (h * 31 + userId.charCodeAt(i)) >>> 0
+  return palette[h % palette.length]
+}
+
 // ── App ───────────────────────────────────────────────────────────────────────
 
 function App() {
   const navigate = useNavigate()
   const [creatorTab, setCreatorTab] = useState<'caleb' | 'mason'>('caleb')
+
+  // ── Swimmer search ──
+  const [searchQuery,   setSearchQuery]   = useState('')
+  const [searchResults, setSearchResults] = useState<SwimmerProfile[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [searchOpen,    setSearchOpen]    = useState(false)
+  const searchRef   = useRef<HTMLDivElement>(null)
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current)
+    if (!searchQuery.trim()) { setSearchResults([]); setSearchLoading(false); return }
+    setSearchLoading(true)
+    searchTimer.current = setTimeout(async () => {
+      const { data } = await searchProfiles(searchQuery.trim())
+      setSearchResults((data ?? []) as SwimmerProfile[])
+      setSearchLoading(false)
+    }, 300)
+    return () => { if (searchTimer.current) clearTimeout(searchTimer.current) }
+  }, [searchQuery])
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node))
+        setSearchOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
 
   const heroRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end end'] })
@@ -371,6 +417,54 @@ function App() {
             ))}
           </nav>
         </div>
+
+        {/* ── Swimmer search ── */}
+        <div ref={searchRef} className={`nav-search${searchOpen ? ' nav-search--open' : ''}`}>
+          <Search size={14} className="nav-search-icon" />
+          <input
+            className="nav-search-input"
+            placeholder="Find a swimmer…"
+            value={searchQuery}
+            onFocus={() => setSearchOpen(true)}
+            onChange={e => { setSearchQuery(e.target.value); setSearchOpen(true) }}
+            onKeyDown={e => { if (e.key === 'Escape') { setSearchOpen(false); setSearchQuery('') } }}
+          />
+          {searchLoading && <Loader size={13} className="nav-search-spinner" />}
+
+          {searchOpen && searchQuery.trim() && (
+            <div className="nav-search-dropdown">
+              {!searchLoading && searchResults.length === 0 && (
+                <div className="nav-search-empty">No swimmers found for "{searchQuery}"</div>
+              )}
+              {searchResults.slice(0, 6).map(p => (
+                <button
+                  key={p.id}
+                  className="nav-search-result"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => {
+                    setSearchOpen(false)
+                    setSearchQuery('')
+                    navigate(`/profile/${p.id}`)
+                  }}
+                >
+                  <div className="nav-search-avatar" style={{ background: avatarBg(p.id) }}>
+                    {p.avatar_url
+                      ? <img src={p.avatar_url} alt="" />
+                      : <span>{initials(p.full_name, p.username)}</span>
+                    }
+                  </div>
+                  <div className="nav-search-info">
+                    <span className="nav-search-name">{p.full_name || p.username}</span>
+                    <span className="nav-search-sub">
+                      @{p.username}{p.club_team ? ` · ${p.club_team}` : ''}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="nav-actions">
           <button className="btn-secondary" onClick={() => navigate('/sign-in')}>Sign In</button>
           <button className="btn-primary"   onClick={() => navigate('/create-account')}>Create Account</button>

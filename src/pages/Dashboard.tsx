@@ -4,7 +4,11 @@ import { Pencil, Check, User, LogOut, Settings, Trophy, Target, Upload, Trending
 import TimeConverterPopup from '../components/TimeConverterPopup'
 import OnboardingModal from '../components/OnboardingModal'
 import { supabase } from '../lib/supabase'
-import { upsertProfile, getFollowCounts } from '../lib/friends'
+import {
+  upsertProfile, getFollowCounts, getFollowing, getFeedNotifications,
+  markFeedNotifsRead, writePRNotificationsForFollowers,
+} from '../lib/friends'
+import type { Profile as SwimProfile, FeedNotif } from '../lib/friends'
 import type { Goal } from './Goals'
 import { playClick, playSave, playNavigate } from '../lib/sounds'
 import './Dashboard.css'
@@ -445,6 +449,8 @@ export default function Dashboard() {
   const [goals,          setGoals]          = useState<Goal[]>([])
   const [calAttendance,  setCalAttendance]  = useState<Record<string, unknown>>({})
   const [followCounts,   setFollowCounts]   = useState({ followers: 0, following: 0 })
+  const [followedProfiles, setFollowedProfiles] = useState<SwimProfile[]>([])
+  const [feedNotifs,     setFeedNotifs]     = useState<FeedNotif[]>([])
   const [readIds,     setReadIds]     = useState<Set<string>>(() => {
     try { return new Set(JSON.parse(localStorage.getItem('sw_read_notifs') ?? '[]')) }
     catch { return new Set() }
@@ -512,27 +518,65 @@ export default function Dashboard() {
       setGoals(user.user_metadata?.goals || [])
       setCalAttendance(user.user_metadata?.calAttendance || {})
       getFollowCounts(user.id).then(counts => setFollowCounts(counts))
-      // Ensure public profile row exists
+      getFollowing(user.id).then(({ data }) => setFollowedProfiles((data ?? []) as SwimProfile[]))
+      getFeedNotifications().then(setFeedNotifs)
+      // Sync public profile row (includes dob + banner for public profile page)
       upsertProfile({
-        id:          user.id,
-        username:    user.user_metadata?.username || user.email || '',
-        full_name:   user.user_metadata?.full_name  || null,
-        avatar_url:  user.user_metadata?.avatar_url || null,
-        gender:      user.user_metadata?.gender      || null,
-        club_team:   user.user_metadata?.club_team   || null,
-        high_school: user.user_metadata?.high_school || null,
-        times:       user.user_metadata?.times       || {},
+        id:           user.id,
+        username:     user.user_metadata?.username    || user.email || '',
+        full_name:    user.user_metadata?.full_name   || null,
+        avatar_url:   user.user_metadata?.avatar_url  || null,
+        gender:       user.user_metadata?.gender      || null,
+        club_team:    user.user_metadata?.club_team   || null,
+        high_school:  user.user_metadata?.high_school || null,
+        times:        user.user_metadata?.times       || {},
+        dob:          user.user_metadata?.dob         || null,
+        banner_type:  user.user_metadata?.bannerType  || null,
+        banner_value: user.user_metadata?.bannerValue || null,
       })
     })
   }, [navigate])
 
   const notifications = generateNotifications(times, timeHistory, notifPrefs, dob, fullName, goals, calAttendance)
+
+  // Birthday notifications for followed swimmers
+  const today = new Date()
+  const followBdayNotifs: AppNotif[] = followedProfiles
+    .filter(p => {
+      if (!p.dob) return false
+      const b = new Date(p.dob + 'T12:00:00')
+      return b.getMonth() === today.getMonth() && b.getDate() === today.getDate()
+    })
+    .map(p => {
+      const first = (p.full_name || p.username).split(' ')[0]
+      return {
+        id: `follow-bday-${p.id}`,
+        type: 'birthday' as const,
+        title: `Happy Birthday, ${first}! 🎂`,
+        message: `${p.full_name || p.username} is celebrating their birthday today — send them some love!`,
+      }
+    })
+
+  const unreadFeedCount = feedNotifs.filter(n => !n.read).length
   const unreadCount = notifications.filter(n => !readIds.has(n.id)).length
+    + followBdayNotifs.filter(n => !readIds.has(n.id)).length
+    + unreadFeedCount
 
   function markAllRead() {
-    const next = new Set([...readIds, ...notifications.map(n => n.id)])
+    const localIds = [
+      ...notifications.map(n => n.id),
+      ...followBdayNotifs.map(n => n.id),
+    ]
+    const next = new Set([...readIds, ...localIds])
     setReadIds(next)
     localStorage.setItem('sw_read_notifs', JSON.stringify([...next]))
+    // Mark DB feed notifs as read
+    const unreadFeedIds = feedNotifs.filter(n => !n.read).map(n => n.id)
+    if (unreadFeedIds.length) {
+      markFeedNotifsRead(unreadFeedIds).then(() =>
+        setFeedNotifs(prev => prev.map(n => ({ ...n, read: true })))
+      )
+    }
   }
 
   function dismissNotif(id: string) {
@@ -554,16 +598,50 @@ export default function Dashboard() {
       if (userIdRef.current) {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
-          upsertProfile({
-            id:          user.id,
-            username:    user.user_metadata?.username || user.email || '',
-            full_name:   user.user_metadata?.full_name  || null,
-            avatar_url:  user.user_metadata?.avatar_url || null,
-            gender:      user.user_metadata?.gender      || null,
-            club_team:   user.user_metadata?.club_team   || null,
-            high_school: user.user_metadata?.high_school || null,
-            times:       nextTimes,
-          })
+          const meta = user.user_metadata ?? {}
+          const myProfile = {
+            id:           user.id,
+            username:     meta.username    || user.email || '',
+            full_name:    meta.full_name   || null,
+            avatar_url:   meta.avatar_url  || null,
+            gender:       meta.gender      || null,
+            club_team:    meta.club_team   || null,
+            high_school:  meta.high_school || null,
+            times:        nextTimes,
+            dob:          meta.dob         || null,
+            banner_type:  meta.bannerType  || null,
+            banner_value: meta.bannerValue || null,
+          }
+          upsertProfile(myProfile)
+
+          // Detect new PRs and notify followers
+          const prevTimes: Record<string, string> = meta.times ?? {}
+          const prEvents: { key: string; label: string; newTime: string; oldTime?: string }[] = []
+          const EVENT_LABEL: Record<string, string> = {
+            'SCY-50-free':'50 Free SCY','SCY-100-free':'100 Free SCY','SCY-200-free':'200 Free SCY',
+            'SCY-500-free':'500 Free SCY','SCY-1000-free':'1000 Free SCY','SCY-1650-free':'1650 Free SCY',
+            'SCY-100-back':'100 Back SCY','SCY-200-back':'200 Back SCY',
+            'SCY-100-breast':'100 Breast SCY','SCY-200-breast':'200 Breast SCY',
+            'SCY-100-fly':'100 Fly SCY','SCY-200-fly':'200 Fly SCY',
+            'SCY-200-im':'200 IM SCY','SCY-400-im':'400 IM SCY',
+            'LCM-50-free':'50 Free LCM','LCM-100-free':'100 Free LCM','LCM-200-free':'200 Free LCM',
+            'LCM-400-free':'400 Free LCM','LCM-800-free':'800 Free LCM','LCM-1500-free':'1500 Free LCM',
+            'LCM-100-back':'100 Back LCM','LCM-200-back':'200 Back LCM',
+            'LCM-100-breast':'100 Breast LCM','LCM-200-breast':'200 Breast LCM',
+            'LCM-100-fly':'100 Fly LCM','LCM-200-fly':'200 Fly LCM',
+            'LCM-200-im':'200 IM LCM','LCM-400-im':'400 IM LCM',
+          }
+          for (const [key, newTime] of Object.entries(nextTimes)) {
+            const oldTime = prevTimes[key]
+            if (!oldTime && newTime) {
+              prEvents.push({ key, label: EVENT_LABEL[key] ?? key, newTime })
+            } else if (oldTime && newTime && newTime < oldTime) {
+              prEvents.push({ key, label: EVENT_LABEL[key] ?? key, newTime, oldTime })
+            }
+          }
+          if (prEvents.length > 0) {
+            writePRNotificationsForFollowers(myProfile, prEvents.slice(0, 5))
+          }
         }
       }
     }, 700)
@@ -800,7 +878,47 @@ export default function Dashboard() {
                 <X size={16} />
               </button>
             </div>
-            {notifications.length === 0 ? (
+
+            {/* ── Follow activity ── */}
+            {(followBdayNotifs.length > 0 || feedNotifs.length > 0) && (
+              <>
+                <div className="notifs-section-label">Following</div>
+                <ul className="notifs-list">
+                  {followBdayNotifs.map(n => {
+                    const isRead = readIds.has(n.id)
+                    return (
+                      <li key={n.id} className={`notif-item${isRead ? ' read' : ''}`}>
+                        <span className="notif-icon" style={{ color: '#db2777', background: '#db277718' }}>
+                          <Star size={15} />
+                        </span>
+                        <div className="notif-body">
+                          <p className="notif-title">{n.title}</p>
+                          <p className="notif-msg">{n.message}</p>
+                        </div>
+                        <button className="notif-dismiss" onClick={() => dismissNotif(n.id)} aria-label="Dismiss">
+                          <X size={13} />
+                        </button>
+                      </li>
+                    )
+                  })}
+                  {feedNotifs.map(n => (
+                    <li key={n.id} className={`notif-item${n.read ? ' read' : ''}`}>
+                      <span className="notif-icon" style={{ color: '#059669', background: '#05966918' }}>
+                        <Zap size={15} />
+                      </span>
+                      <div className="notif-body">
+                        <p className="notif-title">{n.title}</p>
+                        <p className="notif-msg">{n.message}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                {notifications.length > 0 && <div className="notifs-section-label">Your Activity</div>}
+              </>
+            )}
+
+            {/* ── Local notifications ── */}
+            {notifications.length === 0 && followBdayNotifs.length === 0 && feedNotifs.length === 0 ? (
               <p className="notifs-empty">You're all caught up!</p>
             ) : (
               <ul className="notifs-list">

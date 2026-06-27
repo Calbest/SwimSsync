@@ -716,6 +716,15 @@ button:active { transform: scale(0.96) !important; }
   margin: 0;
 }
 
+.notifs-section-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #94a3b8;
+  padding: 6px 16px 2px;
+}
+
 .notifs-list {
   list-style: none;
   margin: 0;
