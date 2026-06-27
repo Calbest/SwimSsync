@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { supabase } from './lib/supabase'
 import './App.css'
+
+// ── Star Rating ───────────────────────────────────────────────────────────────
 
 function StarRating({ onDone }: { onDone?: () => void }) {
   const [hovered,  setHovered]  = useState(0)
@@ -16,9 +18,7 @@ function StarRating({ onDone }: { onDone?: () => void }) {
     const { error } = await supabase
       .from('ratings')
       .insert({ stars: selected, comment: comment.trim() || null })
-    if (error) {
-      console.error('Rating submit error:', error.message, error.code, error.details)
-    }
+    if (error) console.error('Rating submit error:', error.message)
     setStatus(error ? 'error' : 'done')
     if (!error) onDone?.()
   }
@@ -36,13 +36,11 @@ function StarRating({ onDone }: { onDone?: () => void }) {
   }
 
   const display = hovered || selected
-
   return (
     <section className="rating-section">
       <div className="rating-card">
         <h2 className="rating-heading">Rate SwimSCPlan</h2>
         <p className="rating-sub">How useful has this app been for your swimming?</p>
-
         <div className="rating-stars" onMouseLeave={() => setHovered(0)}>
           {[1, 2, 3, 4, 5].map(n => (
             <button
@@ -51,18 +49,10 @@ function StarRating({ onDone }: { onDone?: () => void }) {
               onMouseEnter={() => setHovered(n)}
               onClick={() => setSelected(n)}
               aria-label={`${n} star${n > 1 ? 's' : ''}`}
-            >
-              ★
-            </button>
+            >★</button>
           ))}
         </div>
-
-        {selected > 0 && (
-          <p className="rating-label">
-            {['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent!'][selected]}
-          </p>
-        )}
-
+        {selected > 0 && <p className="rating-label">{['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent!'][selected]}</p>}
         {selected > 0 && (
           <textarea
             className="rating-comment"
@@ -73,18 +63,10 @@ function StarRating({ onDone }: { onDone?: () => void }) {
             maxLength={500}
           />
         )}
-
-        <button
-          className="rating-submit"
-          onClick={submit}
-          disabled={!selected || status === 'sending'}
-        >
+        <button className="rating-submit" onClick={submit} disabled={!selected || status === 'sending'}>
           {status === 'sending' ? 'Submitting…' : 'Submit Rating'}
         </button>
-
-        {status === 'error' && (
-          <p className="rating-error">Something went wrong — please try again.</p>
-        )}
+        {status === 'error' && <p className="rating-error">Something went wrong — please try again.</p>}
       </div>
     </section>
   )
@@ -94,7 +76,6 @@ interface Review { id: number; comment: string; created_at: string }
 
 function ReviewsCarousel({ refresh }: { refresh: number }) {
   const [reviews, setReviews] = useState<Review[]>([])
-
   useEffect(() => {
     supabase
       .from('ratings')
@@ -104,15 +85,11 @@ function ReviewsCarousel({ refresh }: { refresh: number }) {
       .neq('comment', '')
       .order('created_at', { ascending: false })
       .then(({ data }) => {
-        if (data) {
-          const filtered = (data as Review[]).filter(r => r.comment && r.comment.length > 25)
-          setReviews(filtered)
-        }
+        if (data) setReviews((data as Review[]).filter(r => r.comment && r.comment.length > 25))
       })
   }, [refresh])
 
   if (reviews.length === 0) return null
-
   return (
     <div className="reviews-section">
       <h3 className="reviews-title">What People Are Saying</h3>
@@ -141,6 +118,7 @@ function RatingSection() {
   )
 }
 
+// ── Quotes ────────────────────────────────────────────────────────────────────
 
 const QUOTES = [
   { text: "The water is your friend. You don't have to fight with water, just share the same spirit as the water, and it will help you move.", author: "Aleksandr Popov" },
@@ -157,13 +135,10 @@ const QUOTES = [
   { text: "The secret to success is to start before you are ready.", author: "Marie Forleo" },
   { text: "Hard work beats talent when talent doesn't work hard.", author: "Tim Notke" },
   { text: "You can't win unless you learn how to lose.", author: "Kareem Abdul-Jabbar" },
-  { text: "Every morning in Africa, a gazelle wakes up, and it knows it must run faster than the fastest lion or it will be killed. Every morning a lion wakes up and it knows it must run faster than the slowest gazelle or it will starve to death. It doesn't matter whether you are a lion or a gazelle. When the sun comes up, you better be running.", author: "Unknown" },
-  { text: "Do you know what my favorite part of the game is? The opportunity to play.", author: "Mike Singletary" },
-  { text: "I've failed over and over again in my life, and that is why I succeed.", author: "Michael Jordan" },
-  { text: "Believe me, the reward is not so great without the struggle.", author: "Wilma Rudolph" },
-  { text: "It's not the will to win that matters — everyone has that. It's the will to prepare to win that matters.", author: "Paul 'Bear' Bryant" },
   { text: "Push yourself, because no one else is going to do it for you.", author: "Unknown" },
 ]
+
+const easeOut = [0.22, 1, 0.36, 1] as const
 
 function QuotesCarousel() {
   const [idx, setIdx] = useState(0)
@@ -187,12 +162,7 @@ function QuotesCarousel() {
           <p className="quotes-author">— {q.author}</p>
           <div className="quotes-dots">
             {QUOTES.map((_, i) => (
-              <button
-                key={i}
-                className={`quotes-dot${i === idx ? ' active' : ''}`}
-                onClick={() => setIdx(i)}
-                aria-label={`Go to quote ${i + 1}`}
-              />
+              <button key={i} className={`quotes-dot${i === idx ? ' active' : ''}`} onClick={() => setIdx(i)} aria-label={`Go to quote ${i + 1}`} />
             ))}
           </div>
         </div>
@@ -202,31 +172,8 @@ function QuotesCarousel() {
   )
 }
 
-function WaveDivider({ flip = false, fill = '#ffffff' }: { flip?: boolean; fill?: string }) {
-  return (
-    <div className="wave-divider" style={{ transform: flip ? 'scaleY(-1)' : undefined }}>
-      <svg viewBox="0 0 1440 72" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M0 32 C240 72 480 0 720 36 C960 72 1200 8 1440 40 L1440 72 L0 72 Z" fill={fill}/>
-      </svg>
-    </div>
-  )
-}
+// ── Motion variants ───────────────────────────────────────────────────────────
 
-const NAV_SECTIONS = [
-  { label: 'Home', id: 'hero' },
-  { label: 'What', id: 'what' },
-  { label: 'Features', id: 'features' },
-  { label: 'Our Story', id: 'about' },
-  { label: 'Team', id: 'creators' },
-]
-
-const scrollTo = (id: string) => {
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
-}
-
-const easeOut = [0.22, 1, 0.36, 1] as const
-
-// Reusable motion variants
 const fadeUp = {
   initial: { opacity: 0, y: 36 },
   whileInView: { opacity: 1, y: 0 },
@@ -255,12 +202,6 @@ const fadeRight = {
   transition: { duration: 0.7, ease: easeOut },
 }
 
-const staggerContainer = {
-  initial: {},
-  whileInView: {},
-  viewport: { once: true, margin: '-60px' as const },
-}
-
 const staggerItem = (delay: number) => ({
   initial: { opacity: 0, y: 30 },
   whileInView: { opacity: 1, y: 0 },
@@ -268,22 +209,134 @@ const staggerItem = (delay: number) => ({
   transition: { duration: 0.6, ease: easeOut, delay },
 })
 
+// ── Static particle positions (no Math.random in render) ──────────────────────
+
+const PARTICLES = [
+  { left: '7%',  top: '15%', delay: '0s',    dur: '5s'   },
+  { left: '19%', top: '72%', delay: '0.8s',  dur: '4.2s' },
+  { left: '34%', top: '38%', delay: '1.6s',  dur: '6s'   },
+  { left: '48%', top: '82%', delay: '0.3s',  dur: '3.8s' },
+  { left: '62%', top: '25%', delay: '2.1s',  dur: '5.5s' },
+  { left: '75%', top: '58%', delay: '0.9s',  dur: '4.7s' },
+  { left: '88%', top: '40%', delay: '1.4s',  dur: '6.2s' },
+  { left: '13%', top: '50%', delay: '2.5s',  dur: '4s'   },
+  { left: '55%', top: '10%', delay: '0.6s',  dur: '5.8s' },
+  { left: '42%', top: '65%', delay: '1.9s',  dur: '3.5s' },
+  { left: '81%', top: '78%', delay: '1.1s',  dur: '4.9s' },
+  { left: '29%', top: '90%', delay: '3s',    dur: '5.3s' },
+]
+
+const RAY_LEFTS = [12, 26, 40, 55, 69, 84]
+
+// ── Features data ─────────────────────────────────────────────────────────────
+
+const FEATURES: { title: string; blurb: string; svg?: boolean; spanClass?: string }[] = [
+  {
+    title: 'Compare Times',
+    blurb: 'Line up your times against SCS qualifying standards. Five color tiers show exactly where you stand, with inline split logging per event.',
+    svg: true,
+    spanClass: 'bento-span-tall',
+  },
+  {
+    title: 'Qualifications View',
+    blurb: 'See which meets (WAG, JAG, Elite Ch, SAG) you qualify for across every event, side by side.',
+  },
+  {
+    title: 'Progress Tracker',
+    blurb: 'SVG chart per event. Import from USA Swimming or log manually to track improvement over the season.',
+  },
+  {
+    title: 'Import Times',
+    blurb: 'Paste from USA Swimming or Swimcloud — events, courses, and times parsed automatically.',
+  },
+  {
+    title: 'Event Planning',
+    blurb: 'Paste a meet schedule and instantly get Enter / Consider / Skip for every event. Includes an entry deadline countdown.',
+    spanClass: 'bento-span-wide',
+  },
+  {
+    title: 'Goals',
+    blurb: 'Set target times with optional deadlines. Goals appear next to your bests across the entire app.',
+  },
+  {
+    title: 'Mobile Friendly',
+    blurb: 'Fully responsive on any device with a bottom nav bar — every page adapts cleanly to your phone.',
+    spanClass: 'bento-span-wide',
+  },
+]
+
+const NAV_SECTIONS = [
+  { label: 'Home',     id: 'hero',     customScroll: null as null | (() => void) },
+  { label: 'What',    id: 'what',     customScroll: () => {
+      const hero = document.getElementById('hero')
+      if (hero) window.scrollTo({ top: hero.offsetTop + window.innerHeight * 1.3, behavior: 'smooth' })
+    }
+  },
+  { label: 'Features', id: 'features', customScroll: null },
+  { label: 'Our Story',id: 'about',    customScroll: null },
+  { label: 'Team',     id: 'creators', customScroll: null },
+]
+
+const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+
+// ── App ───────────────────────────────────────────────────────────────────────
+
 function App() {
   const navigate = useNavigate()
   const [creatorTab, setCreatorTab] = useState<'caleb' | 'mason'>('caleb')
 
+  const heroRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end end'] })
+
+  // UI content (text, badge, buttons) exits FIRST — fast upward sweep + immediate fade
+  const heroContentOpacity = useTransform(scrollYProgress, [0.01, 0.08], [1, 0])
+  const heroTextY          = useTransform(scrollYProgress, [0, 0.08], [0, -340])
+  // After opacity reaches 0, also set visibility:hidden so GPU-promoted layers can't bleed through
+  const heroContentVisibility = useTransform(scrollYProgress, v => v > 0.09 ? 'hidden' : 'visible')
+
+  // Background image fades AFTER content is already gone — crossfades directly into scene 2
+  const scene1Opacity = useTransform(scrollYProgress, [0.06, 0.17], [1, 0])
+  const heroImgScale  = useTransform(scrollYProgress, [0, 0.17], [1, 1.12])
+
+  // Scene 2 fades in quickly, overlapping the tail of scene1 so there is never a dark gap
+  const scene2Opacity = useTransform(scrollYProgress, [0.12, 0.22], [0, 1])
+
+  const hintOpacity = useTransform(scrollYProgress, [0, 0.03], [1, 0])
+
+  // Underwater parallax
+  const tilesY     = useTransform(scrollYProgress, [0.12, 0.90], [0, -60])
+  const uwImgScale = useTransform(scrollYProgress, [0.18, 0.70], [0.88, 1.04])
+  const uwLeftX    = useTransform(scrollYProgress, [0.18, 0.70], [32, -24])
+  const uwRightX   = useTransform(scrollYProgress, [0.18, 0.70], [-32, 24])
+
+  // Scroll-animated gradients for lower sections
+  const aboutRef = useRef<HTMLElement>(null)
+  const { scrollYProgress: aboutProgress } = useScroll({ target: aboutRef, offset: ['start end', 'end start'] })
+  const aboutGlowX = useTransform(aboutProgress, [0, 1], ['-20%', '120%'])
+  const aboutGlowY = useTransform(aboutProgress, [0, 1], ['120%', '-20%'])
+
+  const quotesWrapRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress: quotesProgress } = useScroll({ target: quotesWrapRef, offset: ['start end', 'end start'] })
+  const quotesGlowX = useTransform(quotesProgress, [0, 1], ['80%', '20%'])
+  const quotesGlowY = useTransform(quotesProgress, [0, 1], ['20%', '80%'])
+
   return (
     <div className="page">
+
       {/* ── Navbar ── */}
       <header className="navbar">
         <div className="nav-left">
           <div className="nav-brand">
-            <img src="/logo.svg" alt="SwimSCPlan brand mark with a stylized wave and the text SwimSCPlan" className="nav-logo-img" />
+            <img src="/logo.svg" alt="SwimSCPlan logo" className="nav-logo-img" />
             <span className="nav-logo">SwimSCPlan</span>
           </div>
           <nav className="nav-links">
             {NAV_SECTIONS.map(s => (
-              <button key={s.id} className="nav-link" onClick={() => scrollTo(s.id)}>
+              <button
+                key={s.id}
+                className="nav-link"
+                onClick={() => s.customScroll ? s.customScroll() : scrollTo(s.id)}
+              >
                 {s.label}
               </button>
             ))}
@@ -291,80 +344,146 @@ function App() {
         </div>
         <div className="nav-actions">
           <button className="btn-secondary" onClick={() => navigate('/sign-in')}>Sign In</button>
-          <button className="btn-primary" onClick={() => navigate('/create-account')}>Create Account</button>
+          <button className="btn-primary"   onClick={() => navigate('/create-account')}>Create Account</button>
         </div>
       </header>
 
-      {/* ── Hero ── */}
-      <section id="hero" className="hero">
-        <div className="hero-text">
-          <h1 className="hero-heading">
-            Train Smarter.<br />
-            <span className="hero-heading-highlight">Swim Faster.</span>
-          </h1>
-          <p className="hero-sub">
-            The planning tool built for swimmers who are serious about the sport.
-            Track your times, compare against qualifying cuts, and know exactly where you stand.
-          </p>
-          <div className="hero-cta-row">
-            <button className="btn-primary" onClick={() => navigate('/create-account')}>Get Started Free</button>
-            <button className="btn-secondary" onClick={() => scrollTo('features')}>See How It Works</button>
-          </div>
-        </div>
-        <div className="hero-visual">
-          <img src="/Hero.jpg" alt="Swimmer in pool" className="hero-img" />
-        </div>
-      </section>
-      <WaveDivider fill="#f0f7ff" />
+      {/* ── Pinned Scroll Journey (350 vh) ── */}
+      <div ref={heroRef} id="hero" className="hero-scroll-container">
+        <div className="sticky-scene-wrapper">
 
-      {/* ── Purpose Section ── */}
-      <section id="what" className="purpose">
-        <motion.h2 {...fadeUp}>What is SwimSCPlan?</motion.h2>
-        <motion.ul className="purpose-list" {...staggerContainer}>
-          {[
-            'Compare every event time against SCS national and championship qualifying cuts — color-coded so you know exactly how close you are',
-            'Import your times directly from USA Swimming or Swimcloud and have them populate your dashboard, progress history, and event analysis automatically',
-            'Plan which events to enter at any meet — paste the schedule, see a ranked recommendation for each event based on your times and how recently they were swum',
-            'Track goals, log splits, visualize progress over time, and keep everything in one place instead of scattered across spreadsheets and PDF cut sheets',
-          ].map((text, i) => (
-            <motion.li key={i} {...staggerItem(i * 0.1)}>{text}</motion.li>
-          ))}
-        </motion.ul>
-      </section>
-      <WaveDivider flip fill="#0f172a" />
+          {/* Scene 1 — Surface */}
+          <motion.div className="scene" style={{ opacity: scene1Opacity }}>
+            <motion.div
+              className="scene-bg-img"
+              style={{ backgroundImage: 'url(/Hero.jpg)', scale: heroImgScale }}
+            />
+            <div className="scene-overlay scene-overlay--surface" />
+            <motion.div className="hero-content-centered" style={{ y: heroTextY, opacity: heroContentOpacity, visibility: heroContentVisibility }}>
+              <motion.span
+                className="hero-badge"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+              >
+                AI-Powered Swimming Analytics
+              </motion.span>
+              <motion.h1
+                className="hero-title-new"
+                initial={{ opacity: 0, y: 32 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.9, delay: 0.5, ease: easeOut }}
+              >
+                Train Smarter.<br />
+                <span className="hero-title-gradient">Swim Faster.</span>
+              </motion.h1>
+              <motion.p
+                className="hero-subtitle-new"
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.7, ease: easeOut }}
+              >
+                The planning tool built for swimmers who are serious about the sport.
+                Track your times, compare against qualifying cuts, and know exactly where you stand.
+              </motion.p>
+              <motion.div
+                className="hero-cta-row"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.9, ease: easeOut }}
+              >
+                <button className="btn-primary" onClick={() => navigate('/create-account')}>
+                  Get Started Free
+                </button>
+                <button className="btn-ghost" onClick={() => scrollTo('features')}>
+                  See How It Works →
+                </button>
+              </motion.div>
+            </motion.div>
+            <motion.div className="scroll-hint" style={{ opacity: hintOpacity }}>
+              <span>Scroll to dive in</span>
+              <div className="scroll-hint-bar" />
+            </motion.div>
+          </motion.div>
+
+          {/* Scene 2 — Underwater */}
+          <motion.div className="scene" style={{ opacity: scene2Opacity }}>
+            <motion.div className="pool-tiles-bg" style={{ y: tilesY }} />
+            {RAY_LEFTS.map((left, i) => (
+              <div key={i} className={`light-ray lr-${i + 1}`} style={{ left: `${left}%` }} />
+            ))}
+            {PARTICLES.map((p, i) => (
+              <div
+                key={i}
+                className="water-particle"
+                style={{ left: p.left, top: p.top, animationDelay: p.delay, animationDuration: p.dur }}
+              />
+            ))}
+            <div className="scene-overlay scene-overlay--underwater" />
+            <div id="what" className="underwater-content">
+              <h2 className="underwater-heading">What is SwimSCPlan?</h2>
+              <div className="uw-images">
+                <motion.div className="uw-img-item" style={{ scale: uwImgScale, x: uwLeftX }}>
+                  <p className="uw-img-caption">Compare Times</p>
+                  <div className="uw-img-placeholder" />
+                </motion.div>
+                <motion.div className="uw-img-item" style={{ scale: uwImgScale }}>
+                  <p className="uw-img-caption">Track Progress</p>
+                  <div className="uw-img-placeholder" />
+                </motion.div>
+                <motion.div className="uw-img-item" style={{ scale: uwImgScale, x: uwRightX }}>
+                  <p className="uw-img-caption">Plan Events</p>
+                  <div className="uw-img-placeholder" />
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+
+        </div>
+      </div>
 
       {/* ── Features ── */}
-      <section id="features" className="features">
-        <motion.h2 {...fadeUp}>Everything you need in one place</motion.h2>
-        <motion.div className="features-grid" {...staggerContainer}>
-          {[
-            { title: 'Compare Times', blurb: 'Line up your personal bests against SCS qualifying standards for every event and course. Five color tiers show exactly how close you are — from "Meets Cut" to "Needs Work" — plus inline split logging for each event.', svg: '/swimmer.svg' },
-            { title: 'Qualifications View', blurb: 'See which SCS championship meets (WAG, JAG, Elite Ch, SAG) you currently qualify for across every event side by side. Summary cards count how many cuts you\'ve hit per meet.' },
-            { title: 'Progress Tracker', blurb: 'Watch your times drop with an SVG line chart for each event. Add entries manually or import from USA Swimming to auto-populate history. See your best time, total improvement, and number of swims logged.' },
-            { title: 'Import Times', blurb: 'Copy your times from USA Swimming or Swimcloud and paste them in. The parser pulls out events, courses, and times automatically — no formatting needed. Saves to your dashboard and progress history in one click.' },
-            { title: 'Event Planning', blurb: 'Paste a meet schedule and instantly see which events to enter. Each event gets an Enter / Consider / Skip recommendation based on your proximity to the standard and how recently the time was swum. Includes entry deadline countdown.' },
-            { title: 'Goals', blurb: 'Set target times for specific events and courses with optional deadlines. Goals appear alongside your best times across the app so you always know what you\'re chasing and how close you are.' },
-            { title: 'Mobile Friendly', blurb: 'Built to work on any device. The dashboard, time tables, qualifications view, and event planner all adapt to your phone screen — with a bottom navigation bar so everything is one tap away at a meet.' },
-          ].map((card, i) => (
-            <motion.div key={card.title} className="feature-card" {...staggerItem(i * 0.08)}>
-              <div className="feature-img-placeholder">
+      <section id="features" className="features-section">
+        <div className="features-header">
+          <motion.h2 className="section-heading-dark" {...fadeUp}>
+            Everything you need in one place
+          </motion.h2>
+          <motion.p className="section-sub-dark" {...fadeUpDelayed(0.2)}>
+            From qualifying cuts to race planning — every tool a competitive swimmer needs.
+          </motion.p>
+        </div>
+        <div className="bento-grid">
+          {FEATURES.map((card, i) => (
+            <motion.div
+              key={card.title}
+              className={`bento-card${card.spanClass ? ' ' + card.spanClass : ''}`}
+              {...staggerItem(i * 0.08)}
+            >
+              <div className="bento-icon-wrap">
                 {card.svg ? (
-                  <img src={card.svg} alt="" className="feature-svg" />
+                  <img src="/swimmer.svg" alt="" className="bento-svg" />
                 ) : (
-                  <svg viewBox="0 0 80 56" className="feature-svg-inline"><rect x="4" y="4" width="72" height="48" rx="4" fill="none" stroke="#00b4d8" strokeWidth="3"/><line x1="4" y1="20" x2="76" y2="20" stroke="#1e3a8a" strokeWidth="1.5" strokeDasharray="4 3"/><line x1="4" y1="36" x2="76" y2="36" stroke="#1e3a8a" strokeWidth="1.5" strokeDasharray="4 3"/><path d="M4 48 Q20 42 36 48 Q52 54 68 48 Q72 46 76 48" stroke="#00b4d8" strokeWidth="2.5" fill="none"/><circle cx="22" cy="14" r="5" fill="#1e3a8a"/><path d="M26 14 C32 8 48 6 56 12" stroke="#1e3a8a" strokeWidth="3.5" fill="none" strokeLinecap="round"/></svg>
+                  <svg viewBox="0 0 80 56" className="bento-svg-inline">
+                    <rect x="4" y="4" width="72" height="48" rx="4" fill="none" stroke="#00C2FF" strokeWidth="2.5"/>
+                    <line x1="4" y1="20" x2="76" y2="20" stroke="rgba(0,194,255,0.3)" strokeWidth="1.5" strokeDasharray="4 3"/>
+                    <line x1="4" y1="36" x2="76" y2="36" stroke="rgba(0,194,255,0.3)" strokeWidth="1.5" strokeDasharray="4 3"/>
+                    <path d="M4 48 Q20 42 36 48 Q52 54 68 48 Q72 46 76 48" stroke="#00C2FF" strokeWidth="2" fill="none"/>
+                    <circle cx="22" cy="14" r="5" fill="rgba(0,194,255,0.25)"/>
+                    <path d="M26 14 C32 8 48 6 56 12" stroke="#00C2FF" strokeWidth="3" fill="none" strokeLinecap="round"/>
+                  </svg>
                 )}
               </div>
-              <h3 className="feature-title">{card.title}</h3>
-              <p className="feature-blurb">{card.blurb}</p>
+              <h3 className="bento-title">{card.title}</h3>
+              <p className="bento-desc">{card.blurb}</p>
+              {card.spanClass === 'bento-span-tall' && <div className="bento-img-ph" />}
             </motion.div>
           ))}
-        </motion.div>
+        </div>
       </section>
 
-      <WaveDivider fill="#f0f7ff" />
-
-      {/* ── About / Inspiration ── */}
-      <section id="about" className="about">
+      {/* ── About ── */}
+      <section ref={aboutRef} id="about" className="about">
+        <motion.div className="section-scroll-glow" style={{ left: aboutGlowX, top: aboutGlowY }} />
         <div className="about-inner">
           <motion.div className="about-text" {...fadeLeft}>
             <span className="about-badge">Our Story</span>
@@ -402,30 +521,23 @@ function App() {
         </div>
       </section>
 
-      <WaveDivider flip fill="#0f172a" />
+      {/* ── Quotes ── */}
+      <div ref={quotesWrapRef} className="quotes-glow-wrap">
+        <motion.div className="section-scroll-glow section-scroll-glow--gold" style={{ left: quotesGlowX, top: quotesGlowY }} />
+        <QuotesCarousel />
+      </div>
 
-      {/* ── Quotes Carousel ── */}
-      <QuotesCarousel />
-
-      {/* ── Meet the Creators ── */}
+      {/* ── Creators ── */}
       <section id="creators" className="creators">
         <motion.h2 className="creators-heading" {...fadeUp}>Meet the People Behind SwimSCPlan</motion.h2>
-
         <motion.div className="creators-tabs" {...fadeUpDelayed(0.1)}>
-          <button
-            className={`creators-tab${creatorTab === 'caleb' ? ' active' : ''}`}
-            onClick={() => setCreatorTab('caleb')}
-          >
+          <button className={`creators-tab${creatorTab === 'caleb' ? ' active' : ''}`} onClick={() => setCreatorTab('caleb')}>
             Caleb Pang &mdash; Creator
           </button>
-          <button
-            className={`creators-tab${creatorTab === 'mason' ? ' active' : ''}`}
-            onClick={() => setCreatorTab('mason')}
-          >
+          <button className={`creators-tab${creatorTab === 'mason' ? ' active' : ''}`} onClick={() => setCreatorTab('mason')}>
             Mason Jung &mdash; Helper
           </button>
         </motion.div>
-
         <motion.div className="creators-card" {...fadeUpDelayed(0.2)}>
           <div className="creators-photo-wrap">
             <img
@@ -446,9 +558,7 @@ function App() {
           <div className="creators-info">
             <h3 className="creators-name">
               {creatorTab === 'caleb' ? 'Caleb Pang' : 'Mason Jung'}
-              <span className="creators-role">
-                {creatorTab === 'caleb' ? 'Creator' : 'Helper'}
-              </span>
+              <span className="creators-role">{creatorTab === 'caleb' ? 'Creator' : 'Helper'}</span>
             </h3>
             {creatorTab === 'caleb' ? (
               <p className="creators-bio">
@@ -470,27 +580,29 @@ function App() {
         </motion.div>
       </section>
 
-      {/* ── Star Rating + Reviews ── */}
+      {/* ── Rating ── */}
       <RatingSection />
 
-
-      {/* ── Call to Action ── */}
-      <section id="cta" className="cta">
-        <motion.img src="/logo.svg" alt="SwimSCPlan brand mark with stylized wave and the text SwimSCPlan" className="cta-logo" {...fadeUp} />
-        <motion.h2 {...fadeUpDelayed(0.1)}>Ready to get started?</motion.h2>
-        <motion.p {...fadeUpDelayed(0.2)}>Create a free account and take control of your training.</motion.p>
-        <motion.button
-          className="btn-primary btn-large cta-pulse"
-          {...fadeUpDelayed(0.3)}
-          onClick={() => navigate('/create-account')}
-        >
-          Create Account
-        </motion.button>
-        <motion.p className="cta-trust" {...fadeUpDelayed(0.4)}>No credit card required. Free forever.</motion.p>
+      {/* ── CTA ── */}
+      <section id="cta" className="cta cta--immersive">
+        <div className="cta-spotlight" />
+        <div className="cta-glass-card">
+          <motion.img src="/logo.svg" alt="SwimSCPlan logo" className="cta-logo" {...fadeUp} />
+          <motion.h2 {...fadeUpDelayed(0.1)}>Ready to get started?</motion.h2>
+          <motion.p {...fadeUpDelayed(0.2)}>Create a free account and take control of your training.</motion.p>
+          <motion.button
+            className="btn-primary btn-large cta-pulse"
+            {...fadeUpDelayed(0.3)}
+            onClick={() => navigate('/create-account')}
+          >
+            Create Account
+          </motion.button>
+          <motion.p className="cta-trust" {...fadeUpDelayed(0.4)}>No credit card required. Free forever.</motion.p>
+        </div>
       </section>
 
       <footer className="footer">
-        <img src="/logo.svg" alt="SwimSCPlan brand mark with stylized wave and the text SwimSCPlan" className="footer-logo" />
+        <img src="/logo.svg" alt="SwimSCPlan logo" className="footer-logo" />
         <span>© 2026 SwimSCPlan</span>
       </footer>
     </div>
