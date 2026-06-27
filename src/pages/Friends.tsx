@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import type { Profile } from '../lib/friends'
+import type { Profile, FeedNotif } from '../lib/friends'
 import {
   searchProfiles, getProfile, getFollowers, getFollowing,
-  follow, unfollow,
+  follow, unfollow, getFeedNotifications, markFeedNotifsRead,
+  writeFollowNotification,
 } from '../lib/friends'
-import { ChevronLeft, Search, Loader, ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronLeft, Search, Loader, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 import './Friends.css'
 
-type Tab = 'followers' | 'following' | 'discover'
+type Tab = 'followers' | 'following' | 'discover' | 'activity'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -23,6 +24,25 @@ function avatarBg(userId: string) {
   let h = 0
   for (let i = 0; i < userId.length; i++) h = (h * 31 + userId.charCodeAt(i)) >>> 0
   return palette[h % palette.length]
+}
+
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 1)  return 'just now'
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  const d = Math.floor(h / 24)
+  if (d < 7)  return `${d}d ago`
+  return new Date(iso).toLocaleDateString()
+}
+
+function notifIcon(type: string) {
+  if (type === 'pb')           return '🏊'
+  if (type === 'new_follower') return '👤'
+  if (type === 'birthday')     return '🎂'
+  return '📣'
 }
 
 const SCY_ORDER = [
@@ -114,6 +134,9 @@ export default function Friends() {
   const [expanded,      setExpanded]      = useState<string | null>(null)
   const [loading,       setLoading]       = useState(true)
 
+  const [feedNotifs,    setFeedNotifs]    = useState<FeedNotif[]>([])
+  const [activityRead,  setActivityRead]  = useState(false)
+
   const [query,         setQuery]         = useState('')
   const [searchResults, setSearchResults] = useState<Profile[]>([])
   const [searching,     setSearching]     = useState(false)
@@ -125,23 +148,36 @@ export default function Friends() {
       if (!user) { navigate('/'); return }
       setMyId(user.id)
 
-      const [profileRes, followersRes, followingRes] = await Promise.all([
+      const [profileRes, followersRes, followingRes, notifs] = await Promise.all([
         getProfile(user.id),
         getFollowers(user.id),
         getFollowing(user.id),
+        getFeedNotifications(50),
       ])
 
       if (profileRes.data) setMyProfile(profileRes.data as Profile)
-      const fwerList = (followersRes.data ?? []) as Profile[]
+      const fwerList  = (followersRes.data ?? []) as Profile[]
       const fwingList = (followingRes.data ?? []) as Profile[]
       setFollowers(fwerList)
       setFollowing(fwingList)
       setFollowingIds(new Set(fwingList.map(p => p.id)))
       setFollowerIds(new Set(fwerList.map(p => p.id)))
+      setFeedNotifs(notifs)
       setLoading(false)
     }
     load()
   }, [navigate])
+
+  // Mark activity as read when that tab is opened
+  useEffect(() => {
+    if (tab !== 'activity' || activityRead) return
+    const unreadIds = feedNotifs.filter(n => !n.read).map(n => n.id)
+    if (!unreadIds.length) { setActivityRead(true); return }
+    markFeedNotifsRead(unreadIds).then(() => {
+      setFeedNotifs(prev => prev.map(n => ({ ...n, read: true })))
+      setActivityRead(true)
+    })
+  }, [tab, activityRead, feedNotifs])
 
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current)
@@ -160,14 +196,18 @@ export default function Friends() {
     const { error } = await follow(userId)
     if (!error) {
       setFollowingIds(prev => new Set([...prev, userId]))
-      // Fetch the profile so it appears in the Following list
       const allKnown = [...followers, ...searchResults, ...following]
       const prof = allKnown.find(p => p.id === userId)
       if (prof) {
         setFollowing(prev => prev.find(p => p.id === userId) ? prev : [...prev, prof])
+        // Fire follow notification to the person being followed
+        if (myProfile) writeFollowNotification(userId, myProfile)
       } else {
         const { data } = await getProfile(userId)
-        if (data) setFollowing(prev => [...prev, data as Profile])
+        if (data) {
+          setFollowing(prev => [...prev, data as Profile])
+          if (myProfile) writeFollowNotification(userId, myProfile)
+        }
       }
     }
     setPending(prev => { const s = new Set(prev); s.delete(userId); return s })
@@ -212,12 +252,23 @@ export default function Friends() {
 
   function UserCard({ profile }: { profile: Profile }) {
     const isExpanded = expanded === profile.id
+    const isMutual   = followingIds.has(profile.id) && followerIds.has(profile.id)
+
     return (
       <div className={`fr-user-card${isExpanded ? ' fr-user-card--open' : ''}`}>
         <div className="fr-user-card-top" onClick={() => setExpanded(isExpanded ? null : profile.id)}>
-          <Avatar profile={profile} size={48} />
+          <button
+            className="fr-avatar-btn"
+            onClick={e => { e.stopPropagation(); navigate(`/profile/${profile.id}`) }}
+            title="View profile"
+          >
+            <Avatar profile={profile} size={48} />
+          </button>
           <div className="fr-user-card-info">
-            <span className="fr-user-name">{profile.full_name || profile.username}</span>
+            <div className="fr-user-name-row">
+              <span className="fr-user-name">{profile.full_name || profile.username}</span>
+              {isMutual && <span className="fr-mutual-badge">Mutual</span>}
+            </div>
             <span className="fr-user-sub">
               @{profile.username}
               {profile.club_team ? ` · ${profile.club_team}` : ''}
@@ -230,14 +281,24 @@ export default function Friends() {
             </span>
           </div>
         </div>
+
         {isExpanded && (
           <div className="fr-user-card-times">
+            <button
+              className="fr-view-profile-btn"
+              onClick={() => navigate(`/profile/${profile.id}`)}
+            >
+              <ExternalLink size={13} />
+              View full profile
+            </button>
             <TimesPanel times={profile.times ?? {}} />
           </div>
         )}
       </div>
     )
   }
+
+  const unreadActivityCount = feedNotifs.filter(n => !n.read).length
 
   const listToShow: Profile[] =
     tab === 'followers' ? followers :
@@ -246,7 +307,7 @@ export default function Friends() {
 
   const emptyMsg =
     tab === 'followers' ? 'No one follows you yet.' :
-    tab === 'following' ? 'You\'re not following anyone yet.' :
+    tab === 'following' ? "You're not following anyone yet." :
     ''
 
   return (
@@ -261,7 +322,13 @@ export default function Friends() {
 
       {/* ── My profile block ── */}
       <div className="fr-hero">
-        <Avatar profile={myProfile ?? { id: myId, full_name: null, username: '…', avatar_url: null }} size={84} />
+        <button
+          className="fr-hero-avatar-btn"
+          onClick={() => myId && navigate(`/profile/${myId}`)}
+          title="View your public profile"
+        >
+          <Avatar profile={myProfile ?? { id: myId, full_name: null, username: '…', avatar_url: null }} size={84} />
+        </button>
         <div className="fr-hero-info">
           <h1 className="fr-hero-name">{myProfile?.full_name || myProfile?.username || '…'}</h1>
           <p className="fr-hero-username">@{myProfile?.username || '—'}</p>
@@ -288,15 +355,20 @@ export default function Friends() {
 
       {/* ── Tabs ── */}
       <div className="fr-tabs">
-        {(['followers','following','discover'] as Tab[]).map(t => (
+        {(['followers','following','discover','activity'] as Tab[]).map(t => (
           <button
             key={t}
             className={`fr-tab${tab === t ? ' fr-tab--active' : ''}`}
             onClick={() => { setTab(t); setExpanded(null) }}
           >
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+            {t === 'followers' ? 'Followers' :
+             t === 'following' ? 'Following' :
+             t === 'discover'  ? 'Discover'  : 'Activity'}
             {t === 'followers' && followers.length > 0 && <span className="fr-tab-pill">{followers.length}</span>}
             {t === 'following' && following.length > 0 && <span className="fr-tab-pill">{following.length}</span>}
+            {t === 'activity'  && unreadActivityCount > 0 && (
+              <span className="fr-tab-pill fr-tab-pill--alert">{unreadActivityCount}</span>
+            )}
           </button>
         ))}
       </div>
@@ -307,7 +379,7 @@ export default function Friends() {
           <Search size={15} className="fr-search-icon" />
           <input
             className="fr-search-input"
-            placeholder="Search by username…"
+            placeholder="Search by name or username…"
             value={query}
             onChange={e => setQuery(e.target.value)}
             autoFocus
@@ -316,40 +388,73 @@ export default function Friends() {
         </div>
       )}
 
-      {/* ── List ── */}
-      <div className="fr-list">
-        {loading && (
-          <div className="fr-list-empty">
-            <Loader size={24} className="fr-list-spinner" />
-            <p>Loading…</p>
-          </div>
-        )}
+      {/* ── Activity feed ── */}
+      {tab === 'activity' && (
+        <div className="fr-activity-wrap">
+          {loading && (
+            <div className="fr-list-empty"><Loader size={24} className="fr-list-spinner" /><p>Loading…</p></div>
+          )}
+          {!loading && feedNotifs.length === 0 && (
+            <div className="fr-list-empty">
+              <p>No activity yet.</p>
+              <p className="fr-list-hint">Follow swimmers to see their new PRs and updates here.</p>
+            </div>
+          )}
+          {!loading && feedNotifs.map(n => (
+            <div
+              key={n.id}
+              className={`fr-activity-item${n.read ? '' : ' fr-activity-item--unread'}`}
+              onClick={() => n.from_user_id && navigate(`/profile/${n.from_user_id}`)}
+              style={{ cursor: n.from_user_id ? 'pointer' : 'default' }}
+            >
+              <div className="fr-activity-icon">{notifIcon(n.type)}</div>
+              <div className="fr-activity-body">
+                <div className="fr-activity-title">{n.title}</div>
+                <div className="fr-activity-msg">{n.message}</div>
+                <div className="fr-activity-time">{relativeTime(n.created_at)}</div>
+              </div>
+              {!n.read && <div className="fr-activity-dot" />}
+            </div>
+          ))}
+        </div>
+      )}
 
-        {!loading && tab === 'discover' && !query.trim() && (
-          <div className="fr-list-empty">
-            <Search size={36} />
-            <p>Search for teammates by username to follow them.</p>
-          </div>
-        )}
+      {/* ── Followers / Following / Discover list ── */}
+      {tab !== 'activity' && (
+        <div className="fr-list">
+          {loading && (
+            <div className="fr-list-empty">
+              <Loader size={24} className="fr-list-spinner" />
+              <p>Loading…</p>
+            </div>
+          )}
 
-        {!loading && tab !== 'discover' && listToShow.length === 0 && (
-          <div className="fr-list-empty">
-            <p>{emptyMsg}</p>
-            {tab === 'followers' && <p className="fr-list-hint">Share your SwimSync profile to get followers.</p>}
-            {tab === 'following' && (
-              <button className="fr-discover-cta" onClick={() => setTab('discover')}>
-                Find people to follow
-              </button>
-            )}
-          </div>
-        )}
+          {!loading && tab === 'discover' && !query.trim() && (
+            <div className="fr-list-empty">
+              <Search size={36} />
+              <p>Search by name or username to find swimmers.</p>
+            </div>
+          )}
 
-        {!loading && tab === 'discover' && query.trim() && listToShow.length === 0 && !searching && (
-          <div className="fr-list-empty"><p>No users found for "{query}".</p></div>
-        )}
+          {!loading && tab !== 'discover' && listToShow.length === 0 && (
+            <div className="fr-list-empty">
+              <p>{emptyMsg}</p>
+              {tab === 'followers' && <p className="fr-list-hint">Share your SwimSync profile to get followers.</p>}
+              {tab === 'following' && (
+                <button className="fr-discover-cta" onClick={() => setTab('discover')}>
+                  Find people to follow
+                </button>
+              )}
+            </div>
+          )}
 
-        {listToShow.map(p => <UserCard key={p.id} profile={p} />)}
-      </div>
+          {!loading && tab === 'discover' && query.trim() && listToShow.length === 0 && !searching && (
+            <div className="fr-list-empty"><p>No swimmers found for "{query}".</p></div>
+          )}
+
+          {listToShow.map(p => <UserCard key={p.id} profile={p} />)}
+        </div>
+      )}
     </div>
   )
 }

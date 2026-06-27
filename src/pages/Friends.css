@@ -396,6 +396,137 @@
 .fr-time-event { color: #475569; font-weight: 600; }
 .fr-time-val   { color: #002855; font-weight: 800; font-variant-numeric: tabular-nums; }
 
+/* ── Avatar as button ── */
+.fr-avatar-btn,
+.fr-hero-avatar-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  transition: opacity 0.15s;
+}
+.fr-avatar-btn:hover,
+.fr-hero-avatar-btn:hover { opacity: 0.82; }
+
+/* ── Mutual badge + name row ── */
+.fr-user-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.fr-mutual-badge {
+  font-size: 10px;
+  font-weight: 800;
+  color: #0077b6;
+  background: #e0f2fe;
+  padding: 1px 6px;
+  border-radius: 8px;
+  letter-spacing: 0.2px;
+  flex-shrink: 0;
+}
+
+/* ── View full profile button inside expanded card ── */
+.fr-view-profile-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0369a1;
+  background: #e0f2fe;
+  border: none;
+  border-radius: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: background 0.15s;
+}
+.fr-view-profile-btn:hover { background: #bae6fd; }
+
+/* ── Activity pill (alert variant) ── */
+.fr-tab-pill--alert {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* ── Activity feed ── */
+.fr-activity-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 680px;
+  width: 100%;
+  align-self: center;
+  box-sizing: border-box;
+  padding: 0 0 48px;
+}
+
+.fr-activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+  transition: background 0.12s;
+  position: relative;
+}
+.fr-activity-item:first-child { border-top: 1px solid #e2e8f0; }
+.fr-activity-item:hover { background: #f8fafc; }
+
+.fr-activity-item--unread {
+  background: #f0f9ff;
+}
+.fr-activity-item--unread:hover { background: #e0f2fe; }
+
+.fr-activity-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+  padding-top: 2px;
+}
+
+.fr-activity-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fr-activity-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.fr-activity-msg {
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.fr-activity-time {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.fr-activity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #0ea5e9;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
 /* ── Mobile ── */
 @media (max-width: 600px) {
   .fr-hero { padding: 20px 16px 24px; gap: 14px; }

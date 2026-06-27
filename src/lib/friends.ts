@@ -143,6 +143,23 @@ export async function markFeedNotifsRead(ids: string[]): Promise<void> {
   } catch { /* notifications table may not exist yet */ }
 }
 
+export async function writeFollowNotification(
+  targetId: string,
+  fromProfile: Pick<Profile, 'id' | 'full_name' | 'username' | 'avatar_url'>,
+): Promise<void> {
+  try {
+    const name = fromProfile.full_name || fromProfile.username
+    await supabase.from('notifications').insert({
+      user_id:      targetId,
+      type:         'new_follower',
+      title:        'New follower',
+      message:      `${name} started following you.`,
+      from_user_id: fromProfile.id,
+      data:         { fromAvatar: fromProfile.avatar_url ?? null },
+    })
+  } catch { /* notifications table may not exist yet */ }
+}
+
 export async function writePRNotificationsForFollowers(
   fromProfile: Profile,
   prEvents: { key: string; label: string; newTime: string; oldTime?: string }[],
