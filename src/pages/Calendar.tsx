@@ -1179,8 +1179,9 @@ export default function Calendar() {
   const [view,      setView]      = useState<CalView>('month')
   const [meets,     setMeets]     = useState<Meet[]>([])
   const [attn,      setAttn]      = useState<AttendanceMap>({})
-  const [sched,     setSched]     = useState<ScheduleTemplate>(DEFAULT_SCHEDULE)
-  const [showSched, setShowSched] = useState(false)
+  const [sched,       setSched]       = useState<ScheduleTemplate>(DEFAULT_SCHEDULE)
+  const [showSched,   setShowSched]   = useState(false)
+  const [confirmReset, setConfirmReset] = useState(false)
   const [showTC,    setShowTC]    = useState(false)
   const [saving,    setSaving]    = useState(false)
 
@@ -1405,6 +1406,23 @@ export default function Calendar() {
                   onChange={e => handleSchedSave({ ...sched, practiceNote: e.target.value })}
                   placeholder="e.g. 6:00–8:00 AM at Rosemead Aquatics"
                 />
+              </div>
+
+              <div className="cal-sched-reset-wrap">
+                {!confirmReset ? (
+                  <button className="cal-sched-reset-btn" onClick={() => setConfirmReset(true)}>
+                    Reset to default
+                  </button>
+                ) : (
+                  <div className="cal-sched-reset-confirm">
+                    <span>Clear all schedule settings?</span>
+                    <button className="cal-sched-reset-yes" onClick={() => {
+                      handleSchedSave(DEFAULT_SCHEDULE)
+                      setConfirmReset(false)
+                    }}>Reset</button>
+                    <button className="cal-sched-reset-no" onClick={() => setConfirmReset(false)}>Cancel</button>
+                  </div>
+                )}
               </div>
             </div>
           )}
