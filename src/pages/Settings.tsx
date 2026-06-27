@@ -81,6 +81,7 @@ export default function Settings() {
 
   // Active tab
   const [settingsTab, setSettingsTab] = useState<'profile' | 'account' | 'tutorial'>('profile')
+  const [tutSlide,    setTutSlide]    = useState(0)
 
   // Notifications
   const [notifPrefs, setNotifPrefs] = useState({
@@ -964,13 +965,48 @@ export default function Settings() {
 
         </>}
 
-        {settingsTab === 'tutorial' && (
+        {settingsTab === 'tutorial' && (() => {
+          const TUT_SLIDES = [
+            { label: 'Dashboard',       color: 'blue'   },
+            { label: 'Calendar',        color: 'green'  },
+            { label: 'Media Library',   color: 'purple' },
+            { label: 'Progress',        color: 'teal'   },
+            { label: 'Goals',           color: 'orange' },
+            { label: 'Qualifications',  color: 'gold'   },
+            { label: 'Event Planning',  color: 'blue'   },
+            { label: 'Settings',        color: 'gray'   },
+            { label: 'Time Converter',  color: 'teal'   },
+          ]
+          const total = TUT_SLIDES.length
+          const prev  = () => setTutSlide(s => (s - 1 + total) % total)
+          const next  = () => setTutSlide(s => (s + 1) % total)
+          return (
           <div className="tutorial-wrap">
-            <p className="tutorial-intro">
-              New to SwimSync? This guide walks through every feature so you can get the most out of it right away.
-            </p>
 
-            {/* ── Dashboard ── */}
+            {/* ── Carousel nav ── */}
+            <div className="tut-carousel-nav">
+              <button className="tut-arrow tut-arrow--prev" onClick={prev} aria-label="Previous">&#8592;</button>
+              <div className="tut-carousel-center">
+                <span className="tut-slide-label">{TUT_SLIDES[tutSlide].label}</span>
+                <div className="tut-dots">
+                  {TUT_SLIDES.map((_, i) => (
+                    <button
+                      key={i}
+                      className={`tut-dot${tutSlide === i ? ' active' : ''}`}
+                      onClick={() => setTutSlide(i)}
+                      aria-label={TUT_SLIDES[i].label}
+                    />
+                  ))}
+                </div>
+                <span className="tut-slide-count">{tutSlide + 1} / {total}</span>
+              </div>
+              <button className="tut-arrow tut-arrow--next" onClick={next} aria-label="Next">&#8594;</button>
+            </div>
+
+            {/* ── Slides ── */}
+            <div className="tut-slides-viewport">
+
+            {tutSlide === 0 && (
             <div className="tut-section">
               <div className="tut-section-header tut-header--blue">🏠 Dashboard — Your Home Screen</div>
               <div className="tut-body">
@@ -1019,8 +1055,9 @@ export default function Settings() {
                 <div className="tut-tip">💡 Customize your banner color or paint your own in Settings → Profile tab.</div>
               </div>
             </div>
+            )}
 
-            {/* ── Calendar ── */}
+            {tutSlide === 1 && (
             <div className="tut-section">
               <div className="tut-section-header tut-header--green">📅 Practice Calendar</div>
               <div className="tut-body">
@@ -1100,7 +1137,9 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* ── Media Library ── */}
+            )}
+
+            {tutSlide === 2 && (
             <div className="tut-section">
               <div className="tut-section-header tut-header--purple">📚 Media Library</div>
               <div className="tut-body">
@@ -1173,7 +1212,9 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* ── Progress ── */}
+            )}
+
+            {tutSlide === 3 && (
             <div className="tut-section">
               <div className="tut-section-header tut-header--teal">📈 Progress</div>
               <div className="tut-body">
@@ -1237,7 +1278,9 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* ── Goals ── */}
+            )}
+
+            {tutSlide === 4 && (
             <div className="tut-section">
               <div className="tut-section-header tut-header--orange">🎯 Goals</div>
               <div className="tut-body">
@@ -1293,7 +1336,9 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* ── Qualifications ── */}
+            )}
+
+            {tutSlide === 5 && (
             <div className="tut-section">
               <div className="tut-section-header tut-header--gold">🏆 Qualifications</div>
               <div className="tut-body">
@@ -1338,7 +1383,9 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* ── Event Planning ── */}
+            )}
+
+            {tutSlide === 6 && (
             <div className="tut-section">
               <div className="tut-section-header tut-header--blue">📋 Event Planning</div>
               <div className="tut-body">
@@ -1352,7 +1399,9 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* ── Settings ── */}
+            )}
+
+            {tutSlide === 7 && (
             <div className="tut-section">
               <div className="tut-section-header tut-header--gray">⚙️ Settings</div>
               <div className="tut-body">
@@ -1415,7 +1464,9 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* ── Time Converter ── */}
+            )}
+
+            {tutSlide === 8 && (
             <div className="tut-section">
               <div className="tut-section-header tut-header--teal">⇄ Time Converter</div>
               <div className="tut-body">
@@ -1457,9 +1508,33 @@ export default function Settings() {
               </div>
             </div>
 
-            <p className="tutorial-footer">That's everything! If something isn't working or a feature is missing, check the Bugs &amp; Requirements section — some features require one-time Supabase setup.</p>
+            )}
+
+            </div>{/* end tut-slides-viewport */}
+
+            {/* ── Bottom nav ── */}
+            <div className="tut-bottom-nav">
+              {tutSlide > 0 && (
+                <button className="tut-bottom-btn" onClick={() => setTutSlide(s => s - 1)}>
+                  ← {['Dashboard','Calendar','Media Library','Progress','Goals','Qualifications','Event Planning','Settings','Time Converter'][tutSlide - 1]}
+                </button>
+              )}
+              <span className="tut-bottom-spacer" />
+              {tutSlide < 8 && (
+                <button className="tut-bottom-btn tut-bottom-btn--next" onClick={() => setTutSlide(s => s + 1)}>
+                  {['Dashboard','Calendar','Media Library','Progress','Goals','Qualifications','Event Planning','Settings','Time Converter'][tutSlide + 1]} →
+                </button>
+              )}
+              {tutSlide === 8 && (
+                <button className="tut-bottom-btn tut-bottom-btn--done" onClick={() => setTutSlide(0)}>
+                  Start over ↺
+                </button>
+              )}
+            </div>
+
           </div>
-        )}
+          )
+        })()}
 
       </div>
     </div>
