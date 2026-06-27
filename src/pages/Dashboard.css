@@ -791,6 +791,9 @@ button:active { transform: scale(0.96) !important; }
   object-fit: contain;
   opacity: 0.9;
   flex-shrink: 0;
+  background: rgba(255,255,255,0.92);
+  padding: 4px 8px;
+  border-radius: 8px;
 }
 
 .dash-welcome {
