@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Pencil, Check, User, LogOut, Settings, Trophy, Target, Upload, TrendingUp, X, CalendarCheck, ArrowLeftRight, Bell, Star, Clock, Zap, Film } from 'lucide-react'
+import { Pencil, Check, User, LogOut, Settings, Trophy, Target, Upload, TrendingUp, X, CalendarCheck, Bell, Star, Clock, Zap, Film } from 'lucide-react'
 import TimeConverterPopup from '../components/TimeConverterPopup'
 import { supabase } from '../lib/supabase'
 import { playClick, playSave, playNavigate } from '../lib/sounds'
@@ -459,11 +459,6 @@ export default function Dashboard() {
         <button className="dash-calendar" onClick={() => { playNavigate(); navigate('/calendar') }}>
           <CalendarCheck size={16} />
           <span>Calendar</span>
-        </button>
-
-        <button className="dash-time-converter" onClick={() => setShowTC(true)}>
-          <ArrowLeftRight size={16} />
-          <span>Time Converter</span>
         </button>
 
         <button className="dash-race-library" onClick={() => { playNavigate(); navigate('/race-library') }}>

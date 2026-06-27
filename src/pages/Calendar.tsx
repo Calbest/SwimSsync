@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, ChevronLeft, ChevronRight, Plus, X, Check, ArrowRightLeft } from 'lucide-react'
+import { LayoutDashboard, ChevronLeft, ChevronRight, Plus, X, Check } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import TimeConverterPopup from '../components/TimeConverterPopup'
 import './Calendar.css'
@@ -183,10 +183,6 @@ export default function Calendar() {
           <button className="cal-nav-btn" onClick={() => navigate('/dashboard')}>
             <LayoutDashboard size={16} />
             <span>Dashboard</span>
-          </button>
-          <button className="cal-nav-btn" onClick={() => setShowTC(true)}>
-            <ArrowRightLeft size={16} />
-            <span>Time Converter</span>
           </button>
         </nav>
         <div className="cal-sidebar-actions">

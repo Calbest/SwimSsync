@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Plus, X, Camera, Video, ChevronLeft, Trash2, Save, ArrowRightLeft } from 'lucide-react'
+import { LayoutDashboard, Plus, X, Camera, Video, ChevronLeft, Trash2, Save } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import TimeConverterPopup from '../components/TimeConverterPopup'
 import './RaceLibrary.css'
@@ -274,9 +274,6 @@ export default function RaceLibrary() {
           <button className="rl-nav-btn" onClick={() => navigate('/dashboard')}>
             <LayoutDashboard size={16} /><span>Dashboard</span>
           </button>
-          <button className="rl-nav-btn" onClick={() => setShowTC(true)}>
-            <ArrowRightLeft size={16} /><span>Time Converter</span>
-          </button>
         </nav>
       </aside>
 
@@ -335,9 +332,6 @@ export default function RaceLibrary() {
           <button className="rl-nav-btn" onClick={() => navigate('/dashboard')}>
             <LayoutDashboard size={16} /><span>Dashboard</span>
           </button>
-          <button className="rl-nav-btn" onClick={() => setShowTC(true)}>
-            <ArrowRightLeft size={16} /><span>Time Converter</span>
-          </button>
         </nav>
       </aside>
       <div className="rl-page">
@@ -366,9 +360,6 @@ export default function RaceLibrary() {
         <nav className="rl-sidebar-nav">
           <button className="rl-nav-btn" onClick={() => navigate('/dashboard')}>
             <LayoutDashboard size={16} /><span>Dashboard</span>
-          </button>
-          <button className="rl-nav-btn" onClick={() => setShowTC(true)}>
-            <ArrowRightLeft size={16} /><span>Time Converter</span>
           </button>
         </nav>
       </aside>

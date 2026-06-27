@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, TrendingUp, Plus, Trash2, AlertTriangle, ChevronDown, ArrowRightLeft } from 'lucide-react'
+import { LayoutDashboard, TrendingUp, Plus, Trash2, AlertTriangle, ChevronDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import TimeConverterPopup from '../components/TimeConverterPopup'
 import './Progress.css'
@@ -328,10 +328,6 @@ export default function Progress() {
           <button className="prog-nav-btn" onClick={() => navigate('/dashboard')}>
             <LayoutDashboard size={16} />
             <span>Dashboard</span>
-          </button>
-          <button className="prog-nav-btn" onClick={() => setShowTC(true)}>
-            <ArrowRightLeft size={16} />
-            <span>Time Converter</span>
           </button>
         </nav>
       </aside>

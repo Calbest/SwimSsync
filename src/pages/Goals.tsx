@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Plus, Target, Trash2, ArrowRightLeft } from 'lucide-react'
+import { LayoutDashboard, Plus, Target, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import TimeConverterPopup from '../components/TimeConverterPopup'
 import './Goals.css'
@@ -67,10 +67,6 @@ export default function Goals() {
           <button className="goals-nav-btn" onClick={() => navigate('/dashboard')}>
             <LayoutDashboard size={16} />
             <span>Dashboard</span>
-          </button>
-          <button className="goals-nav-btn" onClick={() => setShowTC(true)}>
-            <ArrowRightLeft size={16} />
-            <span>Time Converter</span>
           </button>
         </nav>
       </aside>

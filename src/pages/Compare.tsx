@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, ChevronDown, BookOpen, ArrowRightLeft } from 'lucide-react'
+import { LayoutDashboard, ChevronDown, BookOpen } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import {
   SCS_STANDARDS, getAgeGroup, getCut,
@@ -255,10 +255,6 @@ export default function Compare() {
           <button className="compare-nav-btn" onClick={() => setShowLegend(true)}>
             <BookOpen size={16} />
             <span>Color Legend</span>
-          </button>
-          <button className="compare-nav-btn" onClick={() => setShowTC(true)}>
-            <ArrowRightLeft size={16} />
-            <span>Time Converter</span>
           </button>
         </nav>
       </aside>
