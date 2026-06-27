@@ -315,9 +315,42 @@ export default function Dashboard() {
   const [importBannerDismissed, setImportBannerDismissed] = useState(
     () => localStorage.getItem('sw_import_banner_dismissed') === '1'
   )
-  const [showTC, setShowTC] = useState(false)
+  const [showTC,          setShowTC]          = useState(false)
+  const [avatarSheet,     setAvatarSheet]     = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const avatarFileRef = useRef<HTMLInputElement>(null)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  async function handleAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarUploading(true)
+    setAvatarSheet(false)
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = 256; canvas.height = 256
+        const ctx = canvas.getContext('2d')!
+        const side = Math.min(img.width, img.height)
+        ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, 256, 256)
+        resolve(canvas.toDataURL('image/jpeg', 0.82))
+      }
+      img.onerror = reject
+      img.src = URL.createObjectURL(file)
+    })
+    setAvatarUrl(dataUrl)
+    await supabase.auth.updateUser({ data: { avatar_url: dataUrl } })
+    setAvatarUploading(false)
+    if (avatarFileRef.current) avatarFileRef.current.value = ''
+  }
+
+  async function removeAvatar() {
+    setAvatarSheet(false)
+    setAvatarUrl('')
+    await supabase.auth.updateUser({ data: { avatar_url: '' } })
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -399,6 +432,29 @@ export default function Dashboard() {
   return (
     <>
     <TimeConverterPopup isOpen={showTC} onClose={() => setShowTC(false)} />
+
+    {/* ── Avatar action sheet (Instagram-style) ── */}
+    {avatarSheet && (
+      <div className="dash-avatar-sheet-overlay" onClick={() => setAvatarSheet(false)}>
+        <div className="dash-avatar-sheet" onClick={e => e.stopPropagation()}>
+          <div className="dash-avatar-sheet-title">Change Profile Photo</div>
+          <button className="dash-avatar-sheet-btn dash-avatar-sheet-btn--upload"
+            onClick={() => avatarFileRef.current?.click()}>
+            Upload Photo
+          </button>
+          {avatarUrl && (
+            <button className="dash-avatar-sheet-btn dash-avatar-sheet-btn--remove"
+              onClick={removeAvatar}>
+              Remove Current Photo
+            </button>
+          )}
+          <button className="dash-avatar-sheet-btn" onClick={() => setAvatarSheet(false)}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    )}
+
     <div className="dash-layout">
 
       {/* ── Sidebar ── */}
@@ -500,14 +556,22 @@ export default function Dashboard() {
 
           {/* Profile bar */}
           <div className="dash-profile-bar">
-            <div className="dash-banner-avatar-wrap">
+            <button
+              className={`dash-banner-avatar-wrap dash-avatar-clickable${avatarUploading ? ' dash-avatar-uploading' : ''}`}
+              onClick={() => setAvatarSheet(true)}
+              title="Change profile photo"
+            >
               {avatarUrl
                 ? <img src={avatarUrl} alt="avatar" className="dash-banner-avatar-img" />
                 : <span className="dash-banner-avatar-initials">
                     {(fullName || username || 'S').charAt(0).toUpperCase()}
                   </span>
               }
-            </div>
+              <span className="dash-avatar-camera-overlay">
+                {avatarUploading ? '…' : '📷'}
+              </span>
+            </button>
+            <input ref={avatarFileRef} type="file" accept="image/*" hidden onChange={handleAvatarFile} />
             <div className="dash-profile-meta">
               <h1 className="dash-welcome">{fullName || username || '…'}</h1>
               <p className="dash-profile-sub">

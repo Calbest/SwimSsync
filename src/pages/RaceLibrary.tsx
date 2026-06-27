@@ -8,7 +8,6 @@ import './RaceLibrary.css'
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 type Course = 'SCY' | 'LCM' | 'SCM'
-type EntryKind = 'race' | 'media'
 
 interface RaceEntry {
   id: string
@@ -330,8 +329,9 @@ export default function RaceLibrary() {
       if (!user) { navigate('/'); return }
       setUserId(user.id)
       // Support old entries that have no `kind` — treat as race
-      const raw: MediaEntry[] = (user.user_metadata?.raceLibrary ?? []).map((e: MediaEntry) =>
-        ('kind' in e && e.kind) ? e : { ...e, kind: 'race' }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const raw: MediaEntry[] = (user.user_metadata?.raceLibrary ?? []).map((e: any) =>
+        e?.kind ? e : { ...e, kind: 'race' }
       )
       setEntries(raw)
     })
