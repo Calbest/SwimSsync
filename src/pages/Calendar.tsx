@@ -12,7 +12,8 @@ type SessionStatus = 'attended' | 'absent' | 'cancelled' | 'late'
 type CalView      = 'month' | 'year' | 'career'
 
 interface SessionData {
-  time:           string
+  startTime:      string
+  endTime:        string
   status:         SessionStatus
   mood:           number | null
   absenceReason:  string
@@ -22,6 +23,8 @@ interface SessionData {
 interface DrylandData {
   type:         DrylandType
   mood:         number | null
+  startTime?:   string
+  endTime?:     string
   minutesLate?: number
 }
 
@@ -113,8 +116,21 @@ function fmtShort(s: string) {
   })
 }
 
-function defaultSession(time = ''): SessionData {
-  return { time, status: 'attended', mood: null, absenceReason: '' }
+function defaultSession(startTime = ''): SessionData {
+  return { startTime, endTime: '', status: 'attended', mood: null, absenceReason: '' }
+}
+
+function migrateSession(s: Record<string, unknown> | null): SessionData | null {
+  if (!s) return null
+  const startTime = (s.startTime as string) || (s.time as string) || ''
+  return {
+    startTime,
+    endTime:       (s.endTime as string)       || '',
+    status:        (s.status  as SessionStatus) || 'attended',
+    mood:          (s.mood    as number | null) ?? null,
+    absenceReason: (s.absenceReason as string)  || '',
+    minutesLate:   s.minutesLate != null ? Number(s.minutesLate) : undefined,
+  }
 }
 
 function migrateAttendance(raw: Record<string, unknown>): AttendanceMap {
@@ -123,11 +139,15 @@ function migrateAttendance(raw: Record<string, unknown>): AttendanceMap {
     if (!v || typeof v !== 'object') continue
     const vobj = v as Record<string, unknown>
     if ('s1' in vobj) {
-      out[date] = v as DayData
+      out[date] = {
+        s1:      migrateSession(vobj.s1 as Record<string, unknown> | null),
+        s2:      migrateSession(vobj.s2 as Record<string, unknown> | null),
+        dryland: (vobj.dryland as DrylandData | null) ?? null,
+      }
     } else {
       out[date] = {
         s1: {
-          time: '', absenceReason: '',
+          startTime: '', endTime: '', absenceReason: '',
           status: vobj.attended ? 'attended' : 'absent',
           mood: null,
         },
@@ -308,16 +328,30 @@ function SessionBlock({ session, onChange, label, defaultTime, onRemove }: {
     <div className="cal-session">
       <div className="cal-session-head">
         <span className="cal-session-label">{label}</span>
-        <input
-          className="cal-time-input" type="time"
-          value={session.time || defaultTime || ''}
-          onChange={e => set('time', e.target.value)}
-        />
         {onRemove && (
           <button className="cal-session-remove" type="button" onClick={onRemove}>
             <X size={13} />
           </button>
         )}
+      </div>
+      <div className="cal-session-times">
+        <div className="cal-time-field">
+          <label className="cal-time-lbl">Start</label>
+          <input
+            className="cal-time-input" type="time"
+            value={session.startTime || defaultTime || ''}
+            onChange={e => set('startTime', e.target.value)}
+          />
+        </div>
+        <span className="cal-time-arrow">→</span>
+        <div className="cal-time-field">
+          <label className="cal-time-lbl">End</label>
+          <input
+            className="cal-time-input" type="time"
+            value={session.endTime || ''}
+            onChange={e => set('endTime', e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="cal-status-row">
@@ -445,6 +479,25 @@ function DayModal({ dateStr, initial, schedule, onSave, onClose }: {
 
             {d.dryland && (
               <div className="cal-dryland-body">
+                <div className="cal-session-times" style={{marginBottom:10}}>
+                  <div className="cal-time-field">
+                    <label className="cal-time-lbl">Start</label>
+                    <input
+                      className="cal-time-input" type="time"
+                      value={d.dryland.startTime || ''}
+                      onChange={e => setD(p => ({ ...p, dryland: { ...p.dryland!, startTime: e.target.value } }))}
+                    />
+                  </div>
+                  <span className="cal-time-arrow">→</span>
+                  <div className="cal-time-field">
+                    <label className="cal-time-lbl">End</label>
+                    <input
+                      className="cal-time-input" type="time"
+                      value={d.dryland.endTime || ''}
+                      onChange={e => setD(p => ({ ...p, dryland: { ...p.dryland!, endTime: e.target.value } }))}
+                    />
+                  </div>
+                </div>
                 <div className="cal-dry-type-grid">
                   {DRYLAND_TYPES.map(t => (
                     <button

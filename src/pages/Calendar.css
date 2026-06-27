@@ -213,8 +213,39 @@
   font-family: inherit;
   outline: none;
   transition: border-color 0.15s;
+  width: 100%;
+  box-sizing: border-box;
 }
 .cal-time-input:focus { border-color: #3b82f6; }
+
+.cal-session-times {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.cal-time-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.cal-time-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cal-time-arrow {
+  font-size: 14px;
+  color: #94a3b8;
+  padding-bottom: 7px;
+  flex-shrink: 0;
+}
 
 /* ─── Controls row ───────────────────────────────────────────────────────── */
 .cal-controls {
