@@ -24,7 +24,7 @@
   border-radius: 20px;
   width: 100%;
   max-width: 400px;
-  padding: 28px 28px 24px;
+  padding: 44px 28px 24px;
   box-shadow: 0 24px 60px rgba(0,20,50,0.35), 0 0 0 1px rgba(0,40,85,0.08);
   position: relative;
   display: flex;
@@ -42,17 +42,19 @@
 /* ── Skip ── */
 .ob-skip {
   position: absolute;
-  top: 16px;
-  right: 18px;
-  background: none;
+  top: 14px;
+  right: 16px;
+  z-index: 10;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(4px);
   border: none;
   font-size: 13px;
   font-weight: 600;
-  color: #94a3b8;
+  color: #64748b;
   cursor: pointer;
-  padding: 4px 6px;
+  padding: 5px 10px;
   border-radius: 6px;
-  transition: color 0.15s;
+  transition: color 0.15s, background 0.15s;
 }
 .ob-skip:hover { color: #475569; }
 
