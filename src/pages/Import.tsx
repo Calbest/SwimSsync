@@ -410,14 +410,20 @@ export default function Import() {
       mergedHistory[row.key] = hist
     }
 
-    const { error: saveErr } = await supabase.auth.updateUser({
-      data: { times: mergedTimes, timeHistory: mergedHistory },
-    })
-    setSaving(false)
-    if (saveErr) {
-      setParseError(`Save failed: ${saveErr.message}. Try importing fewer events at once.`)
+    try {
+      const { error: saveErr } = await supabase.auth.updateUser({
+        data: { times: mergedTimes, timeHistory: mergedHistory },
+      })
+      if (saveErr) throw new Error(saveErr.message)
+    } catch (err) {
+      setSaving(false)
+      setParseError(
+        `Save failed: ${err instanceof Error ? err.message : 'network error'}. ` +
+        `Check your connection and try again.`
+      )
       return
     }
+    setSaving(false)
     navigate('/dashboard')
   }
 
