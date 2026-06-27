@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Pencil, Check, User, LogOut, Settings, Trophy, Target, Upload, TrendingUp, X, CalendarCheck, Bell, Star, Clock, Zap, Film } from 'lucide-react'
+import { Pencil, User, LogOut, Settings, Trophy, Target, Upload, TrendingUp, X, CalendarCheck, Bell, Star, Clock, Zap, Film } from 'lucide-react'
 import TimeConverterPopup from '../components/TimeConverterPopup'
 import OnboardingModal from '../components/OnboardingModal'
 import { supabase } from '../lib/supabase'
@@ -438,12 +438,15 @@ export default function Dashboard() {
   const [bannerType,  setBannerType]  = useState('default')
   const [bannerValue, setBannerValue] = useState('')
   const [course,      setCourse]      = useState<Course>('SCY')
-  const [editing,     setEditing]     = useState(false)
   const [times,       setTimes]       = useState<Times>({})
+  const [timeMeta,    setTimeMeta]    = useState<Record<string, { date: string; meet: string }>>({})
   const [saveStatus,  setSaveStatus]  = useState<SaveStatus>('idle')
   const [showNotifs,  setShowNotifs]  = useState(false)
   const [timeHistory, setTimeHistory] = useState<Record<string, { date: string; time: string }[]>>({})
-  const [timeDate,    setTimeDate]    = useState(new Date().toISOString().slice(0, 10))
+  const [logModal,    setLogModal]    = useState<{ eventId: string; label: string } | null>(null)
+  const [logTime,     setLogTime]     = useState('')
+  const [logDate,     setLogDate]     = useState(new Date().toISOString().slice(0, 10))
+  const [logMeet,     setLogMeet]     = useState('')
   const [dob,         setDob]         = useState('')
   const [notifPrefs,     setNotifPrefs]     = useState<Record<string, boolean>>({ motivationalQuotes: true })
   const [goals,          setGoals]          = useState<Goal[]>([])
@@ -466,8 +469,6 @@ export default function Dashboard() {
   const [avatarUploading, setAvatarUploading] = useState(false)
   const avatarFileRef = useRef<HTMLInputElement>(null)
   const userIdRef     = useRef('')
-
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   async function handleAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -513,6 +514,7 @@ export default function Dashboard() {
       setBannerType(user.user_metadata?.bannerType || 'default')
       setBannerValue(user.user_metadata?.bannerValue || '')
       setTimes(user.user_metadata?.times || {})
+      setTimeMeta(user.user_metadata?.timeMeta || {})
       setTimeHistory(user.user_metadata?.timeHistory || {})
       if (user.user_metadata?.notifPrefs) setNotifPrefs(user.user_metadata.notifPrefs)
       setGoals(user.user_metadata?.goals || [])
@@ -585,36 +587,60 @@ export default function Dashboard() {
     localStorage.setItem('sw_read_notifs', JSON.stringify([...next]))
   }
 
-  const persistTimes = useCallback((nextTimes: Times) => {
-    if (debounceRef.current) clearTimeout(debounceRef.current)
+  async function handleLogTime() {
+    if (!logModal || !logTime || !isValidTime(logTime)) return
+    const key = timeKey(course, logModal.eventId)
+    const prevBest = times[key]
+    const isNewBest = !prevBest || parseSeconds(logTime) < parseSeconds(prevBest)
+
+    const nextTimes    = isNewBest ? { ...times, [key]: logTime } : times
+    const nextMeta     = isNewBest
+      ? { ...timeMeta, [key]: { date: logDate, meet: logMeet } }
+      : timeMeta
+
+    const arr = [...(timeHistory[key] ?? [])]
+    const existingIdx = arr.findIndex(e => e.date === logDate)
+    if (existingIdx >= 0) arr[existingIdx] = { date: logDate, time: logTime }
+    else arr.push({ date: logDate, time: logTime })
+    const nextHistory = { ...timeHistory, [key]: arr }
+
+    setTimes(nextTimes)
+    setTimeMeta(nextMeta)
+    setTimeHistory(nextHistory)
+    setLogModal(null)
+    setLogTime('')
+    setLogMeet('')
+    setLogDate(new Date().toISOString().slice(0, 10))
+
     setSaveStatus('saving')
-    debounceRef.current = setTimeout(async () => {
-      const { error } = await supabase.auth.updateUser({ data: { times: nextTimes } })
-      if (error) { setSaveStatus('error'); return }
-      setSaveStatus('saved')
-      playSave()
-      setTimeout(() => setSaveStatus('idle'), 2000)
-      if (userIdRef.current) {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-          const meta = user.user_metadata ?? {}
-          const myProfile = {
-            id:           user.id,
-            username:     meta.username    || user.email || '',
-            full_name:    meta.full_name   || null,
-            avatar_url:   meta.avatar_url  || null,
-            gender:       meta.gender      || null,
-            club_team:    meta.club_team   || null,
-            high_school:  meta.high_school || null,
-            times:        nextTimes,
-            dob:          meta.dob         || null,
-            banner_type:  meta.bannerType  || null,
-            banner_value: meta.bannerValue || null,
-            updated_at:   new Date().toISOString(),
-          }
-          upsertProfile(myProfile)
-          const prevTimes: Record<string, string> = meta.times ?? {}
-          const prEvents: { key: string; label: string; newTime: string; oldTime?: string }[] = []
+    const { error } = await supabase.auth.updateUser({
+      data: { times: nextTimes, timeMeta: nextMeta, timeHistory: nextHistory },
+    })
+    if (error) { setSaveStatus('error'); return }
+    setSaveStatus('saved')
+    playSave()
+    setTimeout(() => setSaveStatus('idle'), 2000)
+
+    if (userIdRef.current) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const meta = user.user_metadata ?? {}
+        const myProfile = {
+          id:           user.id,
+          username:     meta.username    || user.email || '',
+          full_name:    meta.full_name   || null,
+          avatar_url:   meta.avatar_url  || null,
+          gender:       meta.gender      || null,
+          club_team:    meta.club_team   || null,
+          high_school:  meta.high_school || null,
+          times:        nextTimes,
+          dob:          meta.dob         || null,
+          banner_type:  meta.bannerType  || null,
+          banner_value: meta.bannerValue || null,
+          updated_at:   new Date().toISOString(),
+        }
+        upsertProfile(myProfile)
+        if (isNewBest && prevBest) {
           const EVENT_LABEL: Record<string, string> = {
             'SCY-50-free':'50 Free SCY','SCY-100-free':'100 Free SCY','SCY-200-free':'200 Free SCY',
             'SCY-500-free':'500 Free SCY','SCY-1000-free':'1000 Free SCY','SCY-1650-free':'1650 Free SCY',
@@ -629,16 +655,13 @@ export default function Dashboard() {
             'LCM-100-fly':'100 Fly LCM','LCM-200-fly':'200 Fly LCM',
             'LCM-200-im':'200 IM LCM','LCM-400-im':'400 IM LCM',
           }
-          for (const [key, newTime] of Object.entries(nextTimes)) {
-            const oldTime = prevTimes[key]
-            if (!oldTime && newTime) prEvents.push({ key, label: EVENT_LABEL[key] ?? key, newTime })
-            else if (oldTime && newTime && newTime < oldTime) prEvents.push({ key, label: EVENT_LABEL[key] ?? key, newTime, oldTime })
-          }
-          if (prEvents.length > 0) writePRNotificationsForFollowers(myProfile, prEvents.slice(0, 5))
+          writePRNotificationsForFollowers(myProfile, [{
+            key, label: EVENT_LABEL[key] ?? key, newTime: logTime, oldTime: prevBest,
+          }])
         }
       }
-    }, 700)
-  }, [])
+    }
+  }
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -649,28 +672,6 @@ export default function Dashboard() {
 
   function timeKey(c: Course, eventId: string) {
     return `${c}-${eventId}`
-  }
-
-  function handleTimeChange(eventId: string, raw: string) {
-    const formatted = formatTimeDigits(raw)
-    const key = timeKey(course, eventId)
-    setTimes(prev => {
-      const next = { ...prev, [key]: formatted }
-      persistTimes(next)
-      return next
-    })
-    if (formatted && isValidTime(formatted)) {
-      setTimeHistory(prev => {
-        const arr = [...(prev[key] ?? [])]
-        const date = new Date().toISOString().slice(0, 10)
-        const idx = arr.findIndex(e => e.date === date)
-        if (idx >= 0) arr[idx] = { date, time: formatted }
-        else arr.push({ date, time: formatted })
-        const next = { ...prev, [key]: arr }
-        supabase.auth.updateUser({ data: { timeHistory: next } })
-        return next
-      })
-    }
   }
 
   return (
@@ -705,6 +706,63 @@ export default function Dashboard() {
           <button className="dash-avatar-sheet-btn" onClick={() => setAvatarSheet(false)}>
             Cancel
           </button>
+        </div>
+      </div>
+    )}
+
+    {/* ── Log Time Modal ── */}
+    {logModal && (
+      <div className="log-modal-overlay" onClick={() => setLogModal(null)}>
+        <div className="log-modal" onClick={e => e.stopPropagation()}>
+          <div className="log-modal-header">
+            <h3 className="log-modal-title">Log Time — {logModal.label} ({course})</h3>
+            <button className="log-modal-close" onClick={() => setLogModal(null)}>
+              <X size={16} />
+            </button>
+          </div>
+          <div className="log-modal-body">
+            <label className="log-modal-label">Time</label>
+            <input
+              className={`log-modal-time-input${logTime && !isValidTime(logTime) ? ' log-modal-time-input--error' : ''}`}
+              placeholder="Type digits, e.g. 10234 → 1:02.34"
+              value={logTime}
+              onChange={e => setLogTime(formatTimeDigits(e.target.value))}
+              autoFocus
+            />
+            <label className="log-modal-label">Date achieved</label>
+            <input
+              type="date"
+              className="log-modal-date-input"
+              value={logDate}
+              onChange={e => setLogDate(e.target.value)}
+            />
+            <label className="log-modal-label">Meet name</label>
+            <input
+              type="text"
+              className="log-modal-meet-input"
+              placeholder="e.g. SCS JAG Championships"
+              value={logMeet}
+              onChange={e => setLogMeet(e.target.value)}
+            />
+            {logTime && times[timeKey(course, logModal.eventId)] && (
+              <p className="log-modal-hint">
+                {parseSeconds(logTime) < parseSeconds(times[timeKey(course, logModal.eventId)])
+                  ? '🏆 This is a new personal best!'
+                  : `Current best: ${times[timeKey(course, logModal.eventId)]}`
+                }
+              </p>
+            )}
+          </div>
+          <div className="log-modal-footer">
+            <button className="log-modal-cancel" onClick={() => setLogModal(null)}>Cancel</button>
+            <button
+              className="log-modal-save"
+              onClick={handleLogTime}
+              disabled={!logTime || !isValidTime(logTime) || saveStatus === 'saving'}
+            >
+              {saveStatus === 'saving' ? 'Saving…' : 'Save'}
+            </button>
+          </div>
         </div>
       </div>
     )}
@@ -1003,43 +1061,15 @@ export default function Dashboard() {
             </div>
 
             <div className="toolbar-right">
-              {editing && (
+              {saveStatus !== 'idle' && (
                 <span className={`save-status save-status--${saveStatus}`}>
                   {saveStatus === 'saving' && 'Saving…'}
                   {saveStatus === 'saved'  && '✓ Saved'}
                   {saveStatus === 'error'  && 'Error saving'}
                 </span>
               )}
-              <button
-                className={`edit-btn${editing ? ' active' : ''}`}
-                onClick={() => setEditing(e => !e)}
-              >
-                {editing ? <Check size={15} /> : <Pencil size={15} />}
-                {editing ? 'Done' : 'Edit'}
-              </button>
             </div>
           </div>
-
-          {editing && (
-            <div className="times-format-hint">
-              Type <strong>numbers only</strong> — the <strong>:</strong> and <strong>.</strong> are placed automatically.
-              &thinsp; Example: type <code>10234</code> to get <strong>1:02.34</strong>.
-              &thinsp; Seconds must be 00–59.
-            </div>
-          )}
-
-          {editing && (
-            <div className="times-date-row">
-              <label className="times-date-label">Date of these times</label>
-              <input
-                type="date"
-                className="times-date-input"
-                value={timeDate}
-                onChange={e => setTimeDate(e.target.value)}
-              />
-              <span className="times-date-hint">Used to log entries in Progress Tracker</span>
-            </div>
-          )}
 
           <div className="times-grid">
             {groups.map(({ stroke, events }) => (
@@ -1049,23 +1079,36 @@ export default function Dashboard() {
               >
                 <h3 className="stroke-heading">{stroke}</h3>
                 <div className={stroke === 'Relays' ? 'stroke-relay-events' : undefined}>
-                {events.map(({ id, label }) => (
-                  <div key={id} className="event-row">
-                    <span className="event-label">{label}</span>
-                    {editing ? (
-                      <input
-                        className={`time-input${isValidTime(times[timeKey(course, id)] ?? '') ? '' : ' time-input--error'}`}
-                        placeholder="e.g. 10234"
-                        value={times[timeKey(course, id)] ?? ''}
-                        onChange={e => handleTimeChange(id, e.target.value)}
-                      />
-                    ) : (
-                      <span className="time-value">
-                        {times[timeKey(course, id)] || '—'}
-                      </span>
-                    )}
-                  </div>
-                ))}
+                {events.map(({ id, label }) => {
+                  const key = timeKey(course, id)
+                  const best = times[key]
+                  const meta = timeMeta[key]
+                  return (
+                    <div key={id} className="event-row">
+                      <span className="event-label">{label}</span>
+                      <div className="event-time-block">
+                        <span className="time-value">{best || '—'}</span>
+                        {best && meta && (
+                          <span className="time-meta">
+                            {meta.date}{meta.meet ? ` · ${meta.meet}` : ''}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        className="time-log-btn"
+                        onClick={() => {
+                          setLogModal({ eventId: id, label: `${label} ${stroke}` })
+                          setLogTime(best ?? '')
+                          setLogDate(meta?.date ?? new Date().toISOString().slice(0, 10))
+                          setLogMeet(meta?.meet ?? '')
+                        }}
+                        title="Log a time"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                    </div>
+                  )
+                })}
                 </div>
               </div>
             ))}

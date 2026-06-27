@@ -331,7 +331,7 @@ function App() {
   const navigate = useNavigate()
   const [creatorTab, setCreatorTab] = useState<'caleb' | 'mason'>('caleb')
 
-  // ── Swimmer search ──
+  // ── Navbar swimmer search ──
   const [searchQuery,   setSearchQuery]   = useState('')
   const [searchResults, setSearchResults] = useState<SwimmerProfile[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
@@ -359,6 +359,24 @@ function App() {
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
+
+  // ── Home-page swimmer search (SwimCloud-style) ──
+  const [homeQuery,   setHomeQuery]   = useState('')
+  const [homeResults, setHomeResults] = useState<SwimmerProfile[]>([])
+  const [homeLoading, setHomeLoading] = useState(false)
+  const homeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (homeTimer.current) clearTimeout(homeTimer.current)
+    if (!homeQuery.trim()) { setHomeResults([]); setHomeLoading(false); return }
+    setHomeLoading(true)
+    homeTimer.current = setTimeout(async () => {
+      const { data } = await searchProfiles(homeQuery.trim())
+      setHomeResults((data ?? []) as SwimmerProfile[])
+      setHomeLoading(false)
+    }, 300)
+    return () => { if (homeTimer.current) clearTimeout(homeTimer.current) }
+  }, [homeQuery])
 
   const heroRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end end'] })
@@ -564,6 +582,66 @@ function App() {
 
         </div>
       </div>
+
+      {/* ── Swimmer Search (SwimCloud-style) ── */}
+      <section id="why" className="sc-search-section">
+        <div className="sc-search-inner">
+          <h2 className="sc-search-heading">Find a Swimmer</h2>
+          <p className="sc-search-sub">Search by name or username to view personal bests and profiles.</p>
+
+          <div className="sc-search-bar-wrap">
+            <Search size={20} className="sc-search-bar-icon" />
+            <input
+              className="sc-search-bar-input"
+              placeholder="Search swimmers…"
+              value={homeQuery}
+              onChange={e => setHomeQuery(e.target.value)}
+              autoComplete="off"
+              spellCheck={false}
+            />
+            {homeLoading && <Loader size={18} className="sc-search-bar-spinner" />}
+          </div>
+
+          {/* Results */}
+          {homeQuery.trim() && (
+            <div className="sc-search-results">
+              {!homeLoading && homeResults.length === 0 && (
+                <div className="sc-search-empty">No swimmers found for "{homeQuery}"</div>
+              )}
+              {homeResults.map(p => (
+                <button
+                  key={p.id}
+                  className="sc-search-card"
+                  onClick={() => navigate(`/profile/${p.id}`)}
+                >
+                  <div
+                    className="sc-search-card-avatar"
+                    style={{ background: avatarBg(p.id) }}
+                  >
+                    {p.avatar_url
+                      ? <img src={p.avatar_url} alt="" />
+                      : <span>{initials(p.full_name, p.username)}</span>
+                    }
+                  </div>
+                  <div className="sc-search-card-info">
+                    <span className="sc-search-card-name">{p.full_name || p.username}</span>
+                    <span className="sc-search-card-meta">
+                      @{p.username}
+                      {p.club_team ? ` · ${p.club_team}` : ''}
+                    </span>
+                  </div>
+                  {p.gender && (
+                    <span className={`sc-search-card-gender sc-search-card-gender--${p.gender}`}>
+                      {p.gender === 'male' ? 'Male' : 'Female'}
+                    </span>
+                  )}
+                  <span className="sc-search-card-arrow">→</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* ── Features ── */}
       <section id="features" className="features-section">
