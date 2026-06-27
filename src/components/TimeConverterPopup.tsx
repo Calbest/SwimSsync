@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, ArrowRightLeft, History, Minus, Maximize2, Minimize2 } from 'lucide-react'
+import { ArrowRightLeft, History, Maximize2, Minimize2 } from 'lucide-react'
 import './TimeConverterPopup.css'
 
 type Course = 'SCY' | 'SCM' | 'LCM'
@@ -204,7 +204,7 @@ export default function TimeConverterPopup({ isOpen, onClose }: Props) {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 spellCheck={false}
-                autoFocus={winState !== 'minimized'}
+                autoFocus
               />
               <button className="tcp-cycle" onClick={() => setFrom(c => COURSES[(COURSES.indexOf(c)+1)%3])} title="Cycle course">
                 <ArrowRightLeft size={13} />

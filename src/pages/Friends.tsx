@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import type { Profile, Friendship } from '../lib/friends'
 import {
-  Profile, Friendship,
   searchProfiles, getMyFriendships, getFriendProfiles,
   sendFriendRequest, acceptFriendRequest, declineFriendRequest, removeFriend,
 } from '../lib/friends'
@@ -211,11 +211,6 @@ export default function Friends() {
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
-  const incomingProfiles = incoming.map(fs => {
-    const requesterId = fs.requester_id
-    return { fs, profile: friendProfiles.find(p => p.id === requesterId) }
-  })
-
   return (
     <div className="fr-page">
       {/* Header */}
