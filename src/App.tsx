@@ -280,15 +280,17 @@ const FEATURES: { title: string; blurb: string; svg?: boolean; spanClass?: strin
   {
     title: 'Goals',
     blurb: 'Set target times with optional deadlines. Goals appear next to your bests across the entire app.',
-    spanClass: 'bento-span-rows',
+    spanClass: 'bento-span-rows-3',
   },
   {
     title: 'Store & Share Media',
     blurb: 'Import your swim photos and pull images from an associated Instagram or Facebook handle — such as your league\'s official account — for a specific date range to collect and review meet-day content.',
+    spanClass: 'bento-span-rows',
   },
   {
     title: 'Event Planning',
     blurb: 'Paste a meet schedule and instantly get Enter / Consider / Skip for every event. Includes an entry deadline countdown.',
+    spanClass: 'bento-span-rows',
   },
 ]
 
