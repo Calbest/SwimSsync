@@ -4,6 +4,7 @@ import { Pencil, Check, User, LogOut, Settings, Trophy, Target, Upload, Trending
 import TimeConverterPopup from '../components/TimeConverterPopup'
 import { supabase } from '../lib/supabase'
 import { upsertProfile } from '../lib/friends'
+import type { Goal } from './Goals'
 import { playClick, playSave, playNavigate } from '../lib/sounds'
 import './Dashboard.css'
 
@@ -126,7 +127,7 @@ type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
 interface AppNotif {
   id: string
-  type: 'pb' | 'standard' | 'stale' | 'tip' | 'goal' | 'motivational' | 'birthday'
+  type: 'pb' | 'standard' | 'stale' | 'tip' | 'goal' | 'motivational' | 'birthday' | 'monthly'
   title: string
   message: string
 }
@@ -214,12 +215,76 @@ function birthdayNotif(dob: string, name: string): AppNotif | null {
   }
 }
 
+function goalAchievedNotifs(goals: Goal[], times: Times): AppNotif[] {
+  return goals
+    .filter(goal => {
+      const live = times[`${goal.course}-${goal.eventId}`] || goal.currentTime
+      const liveSec = parseSeconds(live)
+      const targetSec = parseSeconds(goal.targetTime)
+      if (!liveSec || !targetSec) return false
+      return liveSec <= targetSec
+    })
+    .map(goal => ({
+      id: `goal-achieved-${goal.id}`,
+      type: 'goal' as const,
+      title: `Goal achieved — ${goal.eventLabel}`,
+      message: `You hit your target of ${goal.targetTime} for the ${goal.eventLabel} (${goal.course}). Outstanding work!`,
+    }))
+}
+
+function monthlyReportNotif(calAttendance: Record<string, unknown>): AppNotif | null {
+  const today = new Date()
+  if (today.getDate() > 10) return null // only show in first 10 days of month
+
+  const prevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+  const year  = prevMonth.getFullYear()
+  const month = prevMonth.getMonth() // 0-indexed
+  const reportKey = `${year}-${String(month + 1).padStart(2, '0')}`
+  const storageKey = 'sw_monthly_report'
+  if (localStorage.getItem(storageKey) === reportKey) return null
+
+  let attended = 0, late = 0, absent = 0, cancelled = 0
+  for (const [date, day] of Object.entries(calAttendance)) {
+    const d = new Date(date + 'T12:00:00')
+    if (d.getFullYear() !== year || d.getMonth() !== month) continue
+    const dayData = day as { s1?: { status: string } | null; s2?: { status: string } | null }
+    for (const s of [dayData?.s1, dayData?.s2]) {
+      if (!s) continue
+      if (s.status === 'attended')  attended++
+      else if (s.status === 'late') late++
+      else if (s.status === 'absent') absent++
+      else if (s.status === 'cancelled') cancelled++
+    }
+  }
+
+  const total = attended + late + absent + cancelled
+  if (total === 0) return null
+
+  localStorage.setItem(storageKey, reportKey)
+  const monthName = prevMonth.toLocaleDateString('en-US', { month: 'long' })
+  const rate = Math.round(((attended + late) / total) * 100)
+  const parts = [
+    `${attended + late} attended`,
+    absent    > 0 ? `${absent} absent`    : '',
+    cancelled > 0 ? `${cancelled} cancelled` : '',
+  ].filter(Boolean).join(', ')
+
+  return {
+    id: `monthly-report-${reportKey}`,
+    type: 'monthly',
+    title: `${monthName} attendance report`,
+    message: `${parts} — ${rate}% attendance rate across ${total} sessions.`,
+  }
+}
+
 function generateNotifications(
   times: Times,
   timeHistory: Record<string, { date: string; time: string }[]>,
   notifPrefs: Record<string, boolean>,
   dob: string,
   fullName: string,
+  goals: Goal[],
+  calAttendance: Record<string, unknown>,
 ): AppNotif[] {
   const notifs: AppNotif[] = []
   const today = new Date()
@@ -227,6 +292,13 @@ function generateNotifications(
   // Birthday (always shown at top when it's their birthday)
   const bday = birthdayNotif(dob, fullName)
   if (bday) notifs.unshift(bday)
+
+  // Goal achievements
+  goalAchievedNotifs(goals, times).forEach(n => notifs.push(n))
+
+  // Monthly calendar report (first 10 days of month)
+  const monthly = monthlyReportNotif(calAttendance)
+  if (monthly) notifs.push(monthly)
 
   // Stale time warnings
   Object.entries(timeHistory).forEach(([key, entries]) => {
@@ -302,6 +374,7 @@ const NOTIF_ICONS: Record<AppNotif['type'], typeof Bell> = {
   goal:         Target,
   motivational: Star,
   birthday:     Star,
+  monthly:      CalendarCheck,
 }
 
 const NOTIF_COLORS: Record<AppNotif['type'], string> = {
@@ -312,6 +385,7 @@ const NOTIF_COLORS: Record<AppNotif['type'], string> = {
   goal:         '#7c3aed',
   motivational: '#0369a1',
   birthday:     '#db2777',
+  monthly:      '#0891b2',
 }
 
 function calcAge(dob: string): number | null {
@@ -366,7 +440,9 @@ export default function Dashboard() {
   const [timeHistory, setTimeHistory] = useState<Record<string, { date: string; time: string }[]>>({})
   const [timeDate,    setTimeDate]    = useState(new Date().toISOString().slice(0, 10))
   const [dob,         setDob]         = useState('')
-  const [notifPrefs,  setNotifPrefs]  = useState<Record<string, boolean>>({ motivationalQuotes: true })
+  const [notifPrefs,     setNotifPrefs]     = useState<Record<string, boolean>>({ motivationalQuotes: true })
+  const [goals,          setGoals]          = useState<Goal[]>([])
+  const [calAttendance,  setCalAttendance]  = useState<Record<string, unknown>>({})
   const [readIds,     setReadIds]     = useState<Set<string>>(() => {
     try { return new Set(JSON.parse(localStorage.getItem('sw_read_notifs') ?? '[]')) }
     catch { return new Set() }
@@ -428,6 +504,8 @@ export default function Dashboard() {
       setTimes(user.user_metadata?.times || {})
       setTimeHistory(user.user_metadata?.timeHistory || {})
       if (user.user_metadata?.notifPrefs) setNotifPrefs(user.user_metadata.notifPrefs)
+      setGoals(user.user_metadata?.goals || [])
+      setCalAttendance(user.user_metadata?.calAttendance || {})
       // Ensure public profile row exists
       upsertProfile({
         id:          user.id,
@@ -442,7 +520,7 @@ export default function Dashboard() {
     })
   }, [navigate])
 
-  const notifications = generateNotifications(times, timeHistory, notifPrefs, dob, fullName)
+  const notifications = generateNotifications(times, timeHistory, notifPrefs, dob, fullName, goals, calAttendance)
   const unreadCount = notifications.filter(n => !readIds.has(n.id)).length
 
   function markAllRead() {
