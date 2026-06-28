@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChevronLeft, UserPlus, UserCheck, Users } from 'lucide-react'
+import { ChevronLeft, UserPlus, UserCheck, Users, GitCompare } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import {
   getProfile, checkIsFollowing, follow, unfollow, getFollowCounts,
@@ -300,9 +300,18 @@ export default function PublicProfile() {
           }
         </div>
 
-        {/* Follow button (top-right, only for other users) */}
+        {/* Follow + Compare buttons (top-right, only for other users) */}
         {!isOwnProfile && myId !== undefined && (
-          <div className="pub-follow-wrap">
+          <div className="pub-follow-wrap" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {myId && (
+              <button
+                className="pub-compare-btn"
+                onClick={() => navigate(`/compare-profiles/${profile.id}`)}
+              >
+                <GitCompare size={14} />
+                Compare
+              </button>
+            )}
             {isFollowing ? (
               <button
                 className="pub-follow-btn pub-follow-btn--following"

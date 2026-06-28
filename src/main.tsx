@@ -18,6 +18,7 @@ import Calendar from './pages/Calendar.tsx'
 import RaceLibrary from './pages/RaceLibrary.tsx'
 import Friends from './pages/Friends.tsx'
 import PublicProfile from './pages/Profile.tsx'
+import CompareProfiles from './pages/CompareProfiles.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -39,6 +40,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/race-library" element={<RaceLibrary />} />
         <Route path="/friends" element={<Friends />} />
         <Route path="/profile/:userId" element={<PublicProfile />} />
+        <Route path="/compare-profiles/:userId" element={<CompareProfiles />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
