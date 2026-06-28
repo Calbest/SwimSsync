@@ -8,7 +8,7 @@ import './Import.css'
 
 type Course = 'SCY' | 'LCM' | 'SCM'
 
-interface SwimEntry { date: string; time: string }
+interface SwimEntry { date: string; time: string; meet?: string }
 
 interface ParsedRow {
   key: string
@@ -348,11 +348,12 @@ function parseMeetResults(meets: MeetBlock[]): ParsedRow[] {
       const key = `${eventInfo.course}-${eventInfo.eventId}`
       const time = timeMatch[1]
       const existing = map.get(key)
+      const meetName = meet.name.trim() || undefined
       if (existing) {
         if (!existing.entries.some(e => e.date === date && e.time === time))
-          existing.entries.push({ date, time })
+          existing.entries.push({ date, time, meet: meetName })
       } else {
-        map.set(key, { course: eventInfo.course, eventId: eventInfo.eventId, eventLabel: eventInfo.eventLabel, entries: [{ date, time }] })
+        map.set(key, { course: eventInfo.course, eventId: eventInfo.eventId, eventLabel: eventInfo.eventLabel, entries: [{ date, time, meet: meetName }] })
       }
     }
   }

@@ -8,8 +8,9 @@ import './Progress.css'
 // ─── Types & Data ───────────────────────────────────────────────────────────
 
 type Course = 'SCY' | 'LCM' | 'SCM'
-type TimeEntry  = { date: string; time: string }
+type TimeEntry  = { date: string; time: string; meet?: string }
 type TimeHistory = Record<string, TimeEntry[]>
+type HistoryView = 'fastest' | 'by-meets' | 'by-events'
 
 const SCY_GROUPS = [
   { stroke: 'Freestyle',         events: [{ id: '50-free',   label: '50y'   }, { id: '100-free',  label: '100y'  }, { id: '200-free',  label: '200y'  }, { id: '500-free',  label: '500y'  }, { id: '1000-free', label: '1000y' }, { id: '1650-free', label: '1650y' }] },
@@ -362,6 +363,7 @@ export default function Progress() {
   const [dob,          setDob]          = useState('')
   const [showUnknown,  setShowUnknown]  = useState(false)
   const [showTC,       setShowTC]       = useState(false)
+  const [histView,     setHistView]     = useState<HistoryView>('fastest')
   const [, setDataLoading]  = useState(true)
 
   useEffect(() => {
@@ -459,8 +461,124 @@ export default function Progress() {
             </div>
           )}
 
-          {/* ── Two-column split layout ── */}
-          <div className="prog-split">
+          {/* ── View tabs ── */}
+          {Object.keys(history).length > 0 && (
+            <div className="prog-view-tabs">
+              {([
+                { id: 'fastest',   label: '⚡ Fastest'   },
+                { id: 'by-meets',  label: '📅 By Meets'  },
+                { id: 'by-events', label: '⚡ By Events' },
+              ] as { id: HistoryView; label: string }[]).map(tab => (
+                <button
+                  key={tab.id}
+                  className={`prog-view-tab${histView === tab.id ? ' active' : ''}`}
+                  onClick={() => setHistView(tab.id as HistoryView)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* ── By Meets view ── */}
+          {histView === 'by-meets' && (() => {
+            type MeetGroup = { meetKey: string; meetName: string; date: string; rows: { eventKey: string; label: string; time: string; isPB: boolean }[] }
+            const meetMap = new Map<string, MeetGroup>()
+            const allGroups = [...SCY_GROUPS.map(g => ({ ...g, course: 'SCY' as Course })), ...LCM_GROUPS.map(g => ({ ...g, course: 'LCM' as Course })), ...SCM_GROUPS.map(g => ({ ...g, course: 'SCM' as Course }))]
+            const labelMap: Record<string, string> = {}
+            allGroups.forEach(g => g.events.forEach(ev => {
+              const key = `${g.course}-${ev.id}`
+              const strokeShort = g.stroke === 'Individual Medley' ? 'IM' : g.stroke
+              labelMap[key] = `${g.course} ${ev.label} ${strokeShort}`
+            }))
+
+            Object.entries(history).forEach(([evKey, entries]) => {
+              const bestSec = entries.reduce<number | null>((b, e) => {
+                const s = toSec(e.time); return s !== null && (b === null || s < b) ? s : b
+              }, null)
+              entries.forEach(entry => {
+                const mk = `${entry.meet ?? ''}||${entry.date}`
+                if (!meetMap.has(mk)) meetMap.set(mk, { meetKey: mk, meetName: entry.meet ?? '', date: entry.date, rows: [] })
+                const s = toSec(entry.time)
+                meetMap.get(mk)!.rows.push({ eventKey: evKey, label: labelMap[evKey] ?? evKey, time: entry.time, isPB: s !== null && s === bestSec })
+              })
+            })
+
+            const meetList = [...meetMap.values()].sort((a, b) => b.date.localeCompare(a.date))
+            if (meetList.length === 0) return <div className="prog-empty-state">No meet data yet. Import times with meet names to see this view.</div>
+
+            return (
+              <div className="prog-meets-view">
+                {meetList.map(meet => (
+                  <div key={meet.meetKey} className="prog-meet-block">
+                    <div className="prog-meet-header">
+                      <span className="prog-meet-name">{meet.meetName || '—'}</span>
+                      <span className="prog-meet-date">{fmtDate(meet.date)}</span>
+                    </div>
+                    <div className="prog-meet-rows">
+                      {meet.rows.map((row, i) => (
+                        <div key={i} className={`prog-meet-row${row.isPB ? ' prog-meet-row--pb' : ''}`}>
+                          <span className="prog-meet-row-event">{row.label}</span>
+                          <span className="prog-meet-row-time">{row.time}{row.isPB && <span className="prog-best-tag">★ PB</span>}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
+
+          {/* ── By Events view ── */}
+          {histView === 'by-events' && (() => {
+            const allGroups = [...SCY_GROUPS.map(g => ({ ...g, course: 'SCY' as Course })), ...LCM_GROUPS.map(g => ({ ...g, course: 'LCM' as Course })), ...SCM_GROUPS.map(g => ({ ...g, course: 'SCM' as Course }))]
+            const orderedKeys: string[] = []
+            allGroups.forEach(g => g.events.forEach(ev => orderedKeys.push(`${g.course}-${ev.id}`)))
+
+            const labelMap: Record<string, string> = {}
+            allGroups.forEach(g => g.events.forEach(ev => {
+              const key = `${g.course}-${ev.id}`
+              const strokeShort = g.stroke === 'Individual Medley' ? 'IM' : g.stroke
+              labelMap[key] = `${g.course} ${ev.label} ${strokeShort}`
+            }))
+
+            const evKeys = orderedKeys.filter(k => (history[k]?.length ?? 0) > 0)
+            if (evKeys.length === 0) return <div className="prog-empty-state">No event history yet.</div>
+
+            return (
+              <div className="prog-events-view">
+                {evKeys.map(evKey => {
+                  const evEntries = [...(history[evKey] ?? [])].sort((a, b) => b.date.localeCompare(a.date))
+                  const bestSec = evEntries.reduce<number | null>((b, e) => {
+                    const s = toSec(e.time); return s !== null && (b === null || s < b) ? s : b
+                  }, null)
+                  return (
+                    <div key={evKey} className="prog-event-block">
+                      <div className="prog-event-block-header">
+                        <span className="prog-event-block-label">{labelMap[evKey] ?? evKey}</span>
+                        <span className="prog-event-block-count">{evEntries.length} swim{evEntries.length !== 1 ? 's' : ''}</span>
+                      </div>
+                      <div className="prog-event-block-rows">
+                        {evEntries.map((e, i) => {
+                          const s = toSec(e.time)
+                          const isPB = s !== null && s === bestSec
+                          return (
+                            <div key={i} className={`prog-meet-row${isPB ? ' prog-meet-row--pb' : ''}`}>
+                              <span className="prog-meet-row-event" style={{ color: '#64748b', fontSize: 12 }}>{fmtDate(e.date)}{e.meet ? ` · ${e.meet}` : ''}</span>
+                              <span className="prog-meet-row-time">{e.time}{isPB && <span className="prog-best-tag">★ PB</span>}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
+
+          {/* ── Two-column split layout (Fastest view) ── */}
+          {histView === 'fastest' && <div className="prog-split">
             <div className="prog-split-main">
 
               {/* ── Selectors ── */}
@@ -602,7 +720,7 @@ export default function Progress() {
                 </div>
               )}
             </div>{/* end prog-split-side */}
-          </div>{/* end prog-split */}
+          </div>}{/* end prog-split / fastest conditional */}
 
         </div>
       </div>
