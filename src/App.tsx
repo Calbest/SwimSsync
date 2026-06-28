@@ -8,6 +8,11 @@ import type { Profile as SwimmerProfile } from './lib/friends'
 import compareTimesImg from './Assets/CompareTimes.png'
 import trackProgressImg from './Assets/TrackProgress.png'
 import planEventsImg from './Assets/PlanEvents.png'
+import bentoCompareImg from './Assets/CompareTimes.png'
+import bentoQualImg from './Assets/Qualifications.png'
+import bentoGoalsImg from './Assets/Goals.png'
+import bentoImprovImg from './Assets/See your improvement.png'
+import bentoEventImg from './Assets/Event Planning.png'
 import './App.css'
 
 // ── Star Rating ───────────────────────────────────────────────────────────────
@@ -272,31 +277,35 @@ const RAY_LEFTS = [12, 26, 40, 55, 69, 84]
 
 // ── Features data ─────────────────────────────────────────────────────────────
 
-const FEATURES: { title: string; blurb: string; svg?: boolean; spanClass?: string }[] = [
+const FEATURES: { title: string; blurb: string; spanClass?: string; img: string }[] = [
   {
     title: 'Compare Times',
     blurb: 'Line up your times against SCS qualifying standards. Five color tiers show exactly where you stand, with inline split logging per event.',
-    svg: true,
     spanClass: 'bento-span-tall',
+    img: bentoCompareImg,
   },
   {
     title: 'Qualifications View',
     blurb: 'See which meets (WAG, JAG, Elite Ch, SAG) you qualify for across every event, side by side.',
+    img: bentoQualImg,
   },
   {
     title: 'Goals',
     blurb: 'Set target times with optional deadlines. Goals appear next to your bests across the entire app.',
     spanClass: 'bento-span-rows-4',
+    img: bentoGoalsImg,
   },
   {
     title: 'See Your Improvement',
     blurb: 'Track every event over time with a live progress chart. Watch your best times trend downward, compare splits across sessions, and visualize exactly how far you\'ve come.',
     spanClass: 'bento-span-rows',
+    img: bentoImprovImg,
   },
   {
     title: 'Event Planning',
     blurb: 'Paste a meet schedule and instantly get Enter / Consider / Skip for every event. Includes an entry deadline countdown.',
     spanClass: 'bento-span-rows',
+    img: bentoEventImg,
   },
 ]
 
@@ -584,19 +593,12 @@ function App() {
                 <>
                   <h3 className="bento-title">{card.title}</h3>
                   <p className="bento-desc">{card.blurb}</p>
-                  <div className="bento-img-ph bento-img-ph--full" />
+                  <img src={card.img} alt={card.title} className="bento-ph-img" />
                 </>
               ) : (
                 <>
                   <div className="bento-icon-wrap">
-                    <svg viewBox="0 0 80 56" className="bento-svg-inline">
-                      <rect x="4" y="4" width="72" height="48" rx="4" fill="none" stroke="#00C2FF" strokeWidth="2.5"/>
-                      <line x1="4" y1="20" x2="76" y2="20" stroke="rgba(0,194,255,0.3)" strokeWidth="1.5" strokeDasharray="4 3"/>
-                      <line x1="4" y1="36" x2="76" y2="36" stroke="rgba(0,194,255,0.3)" strokeWidth="1.5" strokeDasharray="4 3"/>
-                      <path d="M4 48 Q20 42 36 48 Q52 54 68 48 Q72 46 76 48" stroke="#00C2FF" strokeWidth="2" fill="none"/>
-                      <circle cx="22" cy="14" r="5" fill="rgba(0,194,255,0.25)"/>
-                      <path d="M26 14 C32 8 48 6 56 12" stroke="#00C2FF" strokeWidth="3" fill="none" strokeLinecap="round"/>
-                    </svg>
+                    <img src={card.img} alt={card.title} className="bento-icon-img" />
                   </div>
                   <h3 className="bento-title">{card.title}</h3>
                   <p className="bento-desc">{card.blurb}</p>

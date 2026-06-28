@@ -697,18 +697,19 @@ p { margin: 0; }
 
 .bento-icon-wrap {
   width: 100%;
-  height: 150px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 194, 255, 0.06);
-  border: 1px solid rgba(0, 194, 255, 0.10);
+  height: 225px;
+  overflow: hidden;
   border-radius: 12px;
   margin-bottom: 22px;
+  border: 1px solid rgba(0, 194, 255, 0.10);
 }
 
-.bento-span-tall .bento-icon-wrap {
-  height: 220px;
+.bento-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
 }
 
 .bento-svg {
@@ -751,19 +752,16 @@ p { margin: 0; }
   flex: none;
 }
 
-.bento-img-ph {
+.bento-ph-img {
+  width: 100%;
   flex: 1;
-  min-height: 180px;
-  background: rgba(0, 194, 255, 0.04);
-  border: 1px solid rgba(0, 194, 255, 0.10);
+  min-height: 355px;
+  object-fit: cover;
+  object-position: top center;
   border-radius: 12px;
-  margin-top: 18px;
-}
-
-.bento-img-ph--full {
-  min-height: 340px;
-  flex: 1;
   margin-top: 22px;
+  display: block;
+  border: 1px solid rgba(0, 194, 255, 0.10);
 }
 
 /* ── About ── */
