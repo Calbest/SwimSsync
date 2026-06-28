@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import '../App.css'
 import './CreateAccount.css'
@@ -15,6 +16,8 @@ export default function CreateAccount() {
   const [email,        setEmail]        = useState('')
   const [password,     setPassword]     = useState('')
   const [confirm,      setConfirm]      = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm,  setShowConfirm]  = useState(false)
   const [error,        setError]        = useState('')
   const [loading,      setLoading]      = useState(false)
 
@@ -215,28 +218,38 @@ export default function CreateAccount() {
 
             <label className="auth-label">
               Password
-              <input
-                className="auth-input"
-                type="password"
-                placeholder="At least 6 characters"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                autoComplete="new-password"
-              />
+              <div className="auth-pw-wrap">
+                <input
+                  className="auth-input"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="At least 6 characters"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                />
+                <button type="button" className="auth-pw-toggle" onClick={() => setShowPassword(s => !s)} tabIndex={-1}>
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </label>
 
             <label className="auth-label">
               Confirm password
-              <input
-                className="auth-input"
-                type="password"
-                placeholder="Re-enter your password"
-                value={confirm}
-                onChange={e => setConfirm(e.target.value)}
-                required
-                autoComplete="new-password"
-              />
+              <div className="auth-pw-wrap">
+                <input
+                  className="auth-input"
+                  type={showConfirm ? 'text' : 'password'}
+                  placeholder="Re-enter your password"
+                  value={confirm}
+                  onChange={e => setConfirm(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                />
+                <button type="button" className="auth-pw-toggle" onClick={() => setShowConfirm(s => !s)} tabIndex={-1}>
+                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </label>
 
             {error && <p className="auth-error">{error}</p>}

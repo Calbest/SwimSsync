@@ -186,6 +186,29 @@
   text-transform: uppercase;
 }
 
+.auth-pw-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.auth-pw-wrap .auth-input {
+  width: 100%;
+  padding-right: 40px;
+}
+.auth-pw-toggle {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+.auth-pw-toggle:hover { color: #0077b6; }
+
 .auth-input {
   padding: 11px 14px;
   border: 1.5px solid #cddff2;

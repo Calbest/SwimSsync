@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import '../App.css'
 import './CreateAccount.css'
@@ -51,7 +52,8 @@ function fmtMs(ms: number) {
 export default function SignIn() {
   const navigate = useNavigate()
   const [email,     setEmail]     = useState('')
-  const [password,  setPassword]  = useState('')
+  const [password,     setPassword]     = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error,     setError]     = useState('')
   const [loading,   setLoading]   = useState(false)
   const [rate,      setRate]      = useState(getRateState)
@@ -155,9 +157,14 @@ export default function SignIn() {
               </label>
               <label className="auth-label">
                 Password
-                <input className="auth-input" type="password" placeholder="Your password"
-                  value={password} onChange={e => setPassword(e.target.value)}
-                  required autoComplete="current-password" maxLength={128} />
+                <div className="auth-pw-wrap">
+                  <input className="auth-input" type={showPassword ? 'text' : 'password'} placeholder="Your password"
+                    value={password} onChange={e => setPassword(e.target.value)}
+                    required autoComplete="current-password" maxLength={128} />
+                  <button type="button" className="auth-pw-toggle" onClick={() => setShowPassword(s => !s)} tabIndex={-1}>
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </label>
 
               {error && <p className="auth-error">{error}</p>}
