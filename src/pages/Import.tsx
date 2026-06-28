@@ -104,6 +104,73 @@ function toSec(t: string): number {
   return p.length === 2 ? parseFloat(p[0]) * 60 + parseFloat(p[1]) : parseFloat(t)
 }
 
+// ─── Swim-Standards personal-best format parser ──────────────────────────────
+// Handles alternating two-line pairs:
+//   50 Y Free 29.80 BB 439
+//   12 2026 CA GOLD Fall Age Group Meet 10/18/2025
+// Y → SCY, M/L/LM → LCM
+
+const SWTD_EVENT_RE = /^(\d+)\s+(Y|LY|L|LM|M)\s+(free(?:style)?|back(?:stroke)?|breast(?:stroke)?|fly|butterfly|i\.?m\.?|individual\s*medley)\s+((?:\d+:)?\d{1,2}\.\d{2})/i
+
+const SWTD_COURSE_MAP: Record<string, Course> = {
+  Y: 'SCY', LY: 'SCY', L: 'LCM', LM: 'LCM', M: 'LCM',
+}
+
+function parseSwimStandardsFormat(raw: string): ParsedRow[] | null {
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean)
+  if (lines.filter(l => SWTD_EVENT_RE.test(l)).length === 0) return null
+
+  const ORDER: Course[] = ['SCY', 'LCM', 'SCM']
+  const EVENT_ORDER = GROUPED_EVENTS.flatMap(g => g.events.map(([id]) => id))
+  const map = new Map<string, { course: Course; eventId: string; eventLabel: string; entries: SwimEntry[] }>()
+
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(SWTD_EVENT_RE)
+    if (!m) continue
+
+    const [, dist, courseKey, strokeRaw, time] = m
+    const course = SWTD_COURSE_MAP[courseKey.toUpperCase()] ?? 'SCY'
+    const stroke = strokeRaw.toLowerCase().replace(/[\s.]+/g, '')
+
+    let strokeId: string
+    if (/^(free|freestyle)$/.test(stroke))           strokeId = 'free'
+    else if (/^(back|backstroke)$/.test(stroke))     strokeId = 'back'
+    else if (/^(breast|breaststroke)$/.test(stroke)) strokeId = 'breast'
+    else if (/^(fly|butterfly)$/.test(stroke))       strokeId = 'fly'
+    else if (/^(im|individualmedley)$/.test(stroke)) strokeId = 'im'
+    else continue
+
+    const eventId    = `${dist}-${strokeId}`
+    const eventLabel = EVENT_LABEL[eventId] ?? `${dist} ${strokeId}`
+
+    // Date lives on the next line (the meet line)
+    let date = 'unknown'
+    if (i + 1 < lines.length && !SWTD_EVENT_RE.test(lines[i + 1])) {
+      date = extractDate(lines[i + 1]) ?? 'unknown'
+    }
+
+    const key = `${course}-${eventId}`
+    const existing = map.get(key)
+    if (existing) {
+      if (!existing.entries.some(e => e.date === date && e.time === time))
+        existing.entries.push({ date, time })
+    } else {
+      map.set(key, { course, eventId, eventLabel, entries: [{ date, time }] })
+    }
+  }
+
+  if (map.size === 0) return null
+
+  return Array.from(map.entries()).map(([key, { course, eventId, eventLabel, entries }]) => {
+    const bestTime = entries.reduce((b, e) => toSec(e.time) < toSec(b.time) ? e : b).time
+    return { key, course, eventId, eventLabel, bestTime, entries, selected: true }
+  }).sort((a, b) => {
+    const ci = ORDER.indexOf(a.course) - ORDER.indexOf(b.course)
+    if (ci !== 0) return ci
+    return EVENT_ORDER.indexOf(a.eventId) - EVENT_ORDER.indexOf(b.eventId)
+  })
+}
+
 // ─── Section parser (SwimCloud manual event mapping) ─────────────────────────
 // Splits pasted text on blank lines; each block is matched to an EventMapping.
 
@@ -416,7 +483,7 @@ export default function Import() {
 
     const rows = useManual
       ? parseSwimCloudSections(rawText, eventMappings)
-      : parseRawText(rawText)
+      : (parseSwimStandardsFormat(rawText) ?? parseRawText(rawText))
 
     if (rows.length === 0) {
       setParseError(
