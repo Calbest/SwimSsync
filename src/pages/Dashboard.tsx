@@ -429,6 +429,24 @@ function pickPhrase(key: string): string {
   return IMPROVE_PHRASES[hash % IMPROVE_PHRASES.length]
 }
 
+function getBestGoalProgress(goals: Goal[], times: Times): { goal: Goal; pct: number } | null {
+  let best: { goal: Goal; pct: number } | null = null
+  for (const goal of goals) {
+    const liveTime = times[`${goal.course}-${goal.eventId}`] || ''
+    const liveSec = parseSeconds(liveTime || goal.currentTime)
+    const startSec = parseSeconds(goal.currentTime)
+    const targetSec = parseSeconds(goal.targetTime)
+    if (!startSec || !targetSec || !liveSec) continue
+    const range = startSec - targetSec
+    if (range <= 0.01) continue
+    if (liveSec <= targetSec) continue
+    const pct = Math.min(100, Math.max(0, ((startSec - liveSec) / range) * 100))
+    if (pct < 10) continue
+    if (!best || pct > best.pct) best = { goal, pct }
+  }
+  return best
+}
+
 function getBestImprovement(history: Record<string, { date: string; time: string }[]>) {
   let best: { label: string; improveSec: number; key: string } | null = null
   for (const [key, entries] of Object.entries(history)) {
@@ -563,6 +581,7 @@ export default function Dashboard() {
   }, [navigate])
 
   const bestImprovement = getBestImprovement(timeHistory)
+  const bestGoalProgress = getBestGoalProgress(goals, times)
   const rawNotifications = generateNotifications(times, timeHistory, notifPrefs, dob, fullName, goals, calAttendance)
   const improvementNotif: AppNotif | null =
     bestImprovement && notifPrefs.improvementBanner !== false
@@ -953,6 +972,23 @@ export default function Dashboard() {
               localStorage.setItem('sw_improve_dismissed', JSON.stringify(sec))
             }} aria-label="Dismiss">
               <X size={14} />
+            </button>
+          </div>
+        )}
+
+        {/* ── Goal Progress Banner ── */}
+        {bestGoalProgress && (
+          <div className="dash-goal-banner">
+            <Target className="dash-goal-banner-icon" size={22} />
+            <div className="dash-goal-banner-body">
+              <strong>You're {Math.round(bestGoalProgress.pct)}% towards your {bestGoalProgress.goal.eventLabel} goal!</strong>
+              <span>
+                {times[`${bestGoalProgress.goal.course}-${bestGoalProgress.goal.eventId}`] || bestGoalProgress.goal.currentTime}
+                {' → '}{bestGoalProgress.goal.targetTime} · {bestGoalProgress.goal.course}
+              </span>
+            </div>
+            <button className="dash-goal-banner-view" onClick={() => { playNavigate(); navigate('/goals') }}>
+              View Goal →
             </button>
           </div>
         )}

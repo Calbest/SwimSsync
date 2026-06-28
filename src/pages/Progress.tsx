@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, TrendingUp, Plus, Trash2, AlertTriangle, ChevronDown, ArrowRightLeft, ChevronLeft } from 'lucide-react'
+import { LayoutDashboard, TrendingUp, Trash2, AlertTriangle, ChevronDown, ArrowRightLeft, ChevronLeft } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import TimeConverterPopup from '../components/TimeConverterPopup'
 import './Progress.css'
@@ -62,26 +62,6 @@ function fmtDateMonth(iso: string): string {
   return new Date(iso + 'T12:00:00').toLocaleDateString('en-US', {
     month: 'short', year: 'numeric',
   })
-}
-
-function formatTimeDigits(raw: string): string {
-  const d = raw.replace(/\D/g, '').slice(0, 6)
-  switch (d.length) {
-    case 0: return ''
-    case 1: case 2: return d
-    case 3: return `${d[0]}.${d.slice(1)}`
-    case 4: return `${d.slice(0, 2)}.${d.slice(2)}`
-    case 5: return `${d[0]}:${d.slice(1, 3)}.${d.slice(3)}`
-    case 6: return `${d.slice(0, 2)}:${d.slice(2, 4)}.${d.slice(4)}`
-    default: return d
-  }
-}
-
-function isValidTime(value: string): boolean {
-  if (value.length <= 2) return true
-  const match = value.match(/(?:^|:)(\d{2})\./)
-  if (!match) return true
-  return parseInt(match[1], 10) <= 59
 }
 
 // ─── SVG Chart ──────────────────────────────────────────────────────────────
@@ -342,11 +322,9 @@ export default function Progress() {
   const [history,      setHistory]      = useState<TimeHistory>({})
   const [dashTimes,    setDashTimes]    = useState<Times>({})
   const [dob,          setDob]          = useState('')
-  const [newDate,      setNewDate]      = useState(new Date().toISOString().slice(0, 10))
-  const [newTime,      setNewTime]      = useState('')
   const [showUnknown,  setShowUnknown]  = useState(false)
   const [showTC,       setShowTC]       = useState(false)
-  const [dataLoading,  setDataLoading]  = useState(true)
+  const [, setDataLoading]  = useState(true)
 
   useEffect(() => {
     setDataLoading(true)
@@ -386,16 +364,6 @@ export default function Progress() {
   const delta = entries.length >= 2
     ? (toSec(entries[entries.length - 1].time) ?? 0) - (toSec(entries[0].time) ?? 0)
     : null
-
-  async function addEntry() {
-    if (!newTime.trim() || !newDate || !isValidTime(newTime)) return
-    setNewTime('')
-    const { data } = await supabase.auth.getUser()
-    const freshHistory: TimeHistory = data?.user?.user_metadata?.timeHistory ?? {}
-    const next = { ...freshHistory, [key]: [...(freshHistory[key] ?? []), { date: newDate, time: newTime }] }
-    setHistory(next)
-    await supabase.auth.updateUser({ data: { timeHistory: next } })
-  }
 
   async function deleteEntry(sortedIdx: number) {
     const { data } = await supabase.auth.getUser()
@@ -565,44 +533,6 @@ export default function Progress() {
                 </span>
               </div>
             )}
-          </div>
-
-          {/* ── Add entry form ── */}
-          <div className="prog-add-card">
-            <h3 className="prog-add-heading">Add Entry</h3>
-            <div className="prog-add-form">
-              <div className="prog-add-field">
-                <label className="prog-add-label">Date</label>
-                <input
-                  type="date"
-                  className="prog-add-date"
-                  value={newDate}
-                  max={new Date().toISOString().slice(0, 10)}
-                  onChange={e => setNewDate(e.target.value)}
-                />
-              </div>
-              <div className="prog-add-field">
-                <label className="prog-add-label">Time</label>
-                <input
-                  className={`prog-add-time${newTime && !isValidTime(newTime) ? ' prog-add-time--error' : ''}`}
-                  placeholder="type digits, e.g. 15234"
-                  value={newTime}
-                  onChange={e => setNewTime(formatTimeDigits(e.target.value))}
-                  onKeyDown={e => { if (e.key === 'Enter') addEntry() }}
-                />
-                {newTime && !isValidTime(newTime) && (
-                  <span className="prog-add-time-hint">Seconds can't exceed 59</span>
-                )}
-              </div>
-              <button
-                className="prog-add-btn"
-                onClick={addEntry}
-                disabled={dataLoading || !newTime.trim() || !newDate || !isValidTime(newTime)}
-              >
-                <Plus size={15} />
-                Add Entry
-              </button>
-            </div>
           </div>
 
           {/* ── Entry list ── */}

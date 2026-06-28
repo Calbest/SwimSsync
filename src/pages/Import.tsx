@@ -234,6 +234,72 @@ function parseRawText(raw: string, targetName?: string): ParsedRow[] {
   })
 }
 
+// ─── Meet results parser ─────────────────────────────────────────────────────
+// Handles the tab-separated format from Swimcloud meet results:
+//   Event          Time      Imp     Place
+//   100 Y Free     1:00.55   –       18th
+
+interface MeetBlock { id: number; name: string; date: string; text: string }
+
+function parseMeetEventStr(eventStr: string): { course: Course; eventId: string; eventLabel: string } | null {
+  const m = eventStr.trim().match(/^(\d+)\s+(Y|M)\s+(.+)$/i)
+  if (!m) return null
+  const [, dist, courseChar, strokeStr] = m
+  const course: Course = courseChar.toUpperCase() === 'Y' ? 'SCY' : 'LCM'
+  const stroke = strokeStr.trim().toLowerCase().replace(/\./g, '')
+  let strokeId: string | null = null
+  if (/^(freestyle|free|fr)$/.test(stroke))           strokeId = 'free'
+  else if (/^(backstroke|back|bk)$/.test(stroke))     strokeId = 'back'
+  else if (/^(breaststroke|breast|br)$/.test(stroke)) strokeId = 'breast'
+  else if (/^(butterfly|fly|fl)$/.test(stroke))       strokeId = 'fly'
+  else if (/^(individual medley|im)$/.test(stroke))   strokeId = 'im'
+  else return null
+  const eventId = `${dist}-${strokeId}`
+  const eventLabel = EVENT_LABEL[eventId] ?? `${dist} ${strokeId.charAt(0).toUpperCase() + strokeId.slice(1)}`
+  return { course, eventId, eventLabel }
+}
+
+function parseMeetResults(meets: MeetBlock[]): ParsedRow[] {
+  const ORDER: Course[] = ['SCY', 'LCM', 'SCM']
+  const EVENT_ORDER = GROUPED_EVENTS.flatMap(g => g.events.map(([id]) => id))
+  const map = new Map<string, { course: Course; eventId: string; eventLabel: string; entries: SwimEntry[] }>()
+
+  for (const meet of meets) {
+    const date = meet.date || 'unknown'
+    const lines = meet.text.split('\n').map(l => l.trim()).filter(Boolean)
+    for (const line of lines) {
+      if (/^event\s+time/i.test(line)) continue
+      const cols = line.split('\t')
+      if (cols.length < 2) continue
+      const eventStr = cols[0].trim()
+      const timeStr  = cols[1].trim()
+      if (!timeStr || timeStr === '–' || timeStr === '-' || /^(NT|DQ|DNS|SCR)$/i.test(timeStr)) continue
+      const timeMatch = timeStr.match(TIME_RE)
+      if (!timeMatch) continue
+      const eventInfo = parseMeetEventStr(eventStr)
+      if (!eventInfo) continue
+      const key = `${eventInfo.course}-${eventInfo.eventId}`
+      const time = timeMatch[1]
+      const existing = map.get(key)
+      if (existing) {
+        if (!existing.entries.some(e => e.date === date && e.time === time))
+          existing.entries.push({ date, time })
+      } else {
+        map.set(key, { course: eventInfo.course, eventId: eventInfo.eventId, eventLabel: eventInfo.eventLabel, entries: [{ date, time }] })
+      }
+    }
+  }
+
+  return Array.from(map.entries()).map(([key, { course, eventId, eventLabel, entries }]) => {
+    const bestTime = entries.reduce((b, e) => toSec(e.time) < toSec(b.time) ? e : b).time
+    return { key, course, eventId, eventLabel, bestTime, entries, selected: true }
+  }).sort((a, b) => {
+    const ci = ORDER.indexOf(a.course) - ORDER.indexOf(b.course)
+    if (ci !== 0) return ci
+    return EVENT_ORDER.indexOf(a.eventId) - EVENT_ORDER.indexOf(b.eventId)
+  })
+}
+
 // ─── PDF extraction ─────────────────────────────────────────────────────────
 
 async function extractPdfText(file: File): Promise<string> {
@@ -289,9 +355,22 @@ export default function Import() {
   const [dragOver,    setDragOver]    = useState(false)
   const fileInputRef    = useRef<HTMLInputElement>(null)
   const mappingCounter  = useRef(1)
+  const meetCounter     = useRef(1)
+  const [swimcloudMode, setSwimcloudMode] = useState<'history' | 'meet'>('history')
+  const [meets,         setMeets]         = useState<MeetBlock[]>([{ id: 0, name: '', date: '', text: '' }])
   const [eventMappings, setEventMappings] = useState<EventMapping[]>([
     { id: 0, course: 'SCY', eventId: '' },
   ])
+
+  function addMeet() {
+    setMeets(prev => [...prev, { id: meetCounter.current++, name: '', date: '', text: '' }])
+  }
+  function removeMeet(id: number) {
+    setMeets(prev => prev.filter(m => m.id !== id))
+  }
+  function updateMeet(id: number, field: 'name' | 'date' | 'text', value: string) {
+    setMeets(prev => prev.map(m => m.id === id ? { ...m, [field]: value } : m))
+  }
 
   function addMapping() {
     setEventMappings(prev => [...prev, { id: mappingCounter.current++, course: 'SCY', eventId: '' }])
@@ -317,6 +396,21 @@ export default function Import() {
 
   function handleParse() {
     setParseError('')
+
+    if (source === 'swimcloud' && swimcloudMode === 'meet') {
+      const rows = parseMeetResults(meets)
+      if (rows.length === 0) {
+        setParseError(
+          'No times found. Paste your meet results in the box(es) above — each row must have an event name ' +
+          '(e.g. "100 Y Free"), a tab, and a time (e.g. "1:00.55"). Make sure the date is filled in for each meet.'
+        )
+        return
+      }
+      setParsed(rows)
+      setStep('review')
+      return
+    }
+
     const filledMappings = eventMappings.filter(m => m.eventId)
     const useManual = source === 'swimcloud' && filledMappings.length > 0
 
@@ -505,61 +599,153 @@ export default function Import() {
 
           {source === 'swimcloud' && (
             <>
-              <ol className="import-steps">
-                <li>Go to <strong>swimcloud.com</strong> and find your swimmer profile.</li>
-                <li>Click the <strong>Times</strong> tab and copy the time rows for each event you want to import.</li>
-                <li>Paste them below, with a <strong>blank line between each event's block</strong>. Then use the event list below to tell the parser which event each block belongs to.</li>
-                <li className="import-step-note"><Info size={13} /><span>If your copy includes an event header line (e.g. <code>100 FREE SCY:</code>), the parser will detect it automatically — you can leave the list below empty.</span></li>
-                <li className="import-step-note"><AlertTriangle size={13} /><span>Use the per-event Times tab, not the Best Times comparison table (which mixes courses on the same row).</span></li>
-              </ol>
-
-              {/* ── Manual event mapping ── */}
-              <div className="import-mapping-block">
-                <div className="import-mapping-header">
-                  <span className="import-mapping-title">Event order</span>
-                  <span className="import-mapping-hint">Match each block (separated by a blank line) to its event. Leave empty if your data has event header lines.</span>
-                </div>
-
-                {eventMappings.map((m, idx) => (
-                  <div key={m.id} className="import-mapping-row">
-                    <span className="import-mapping-num">Block {idx + 1}</span>
-                    <select
-                      className="import-mapping-select import-mapping-select--course"
-                      value={m.course}
-                      onChange={e => updateMapping(m.id, 'course', e.target.value)}
-                    >
-                      <option value="SCY">SCY</option>
-                      <option value="LCM">LCM</option>
-                      <option value="SCM">SCM</option>
-                    </select>
-                    <select
-                      className="import-mapping-select import-mapping-select--event"
-                      value={m.eventId}
-                      onChange={e => updateMapping(m.id, 'eventId', e.target.value)}
-                    >
-                      <option value="">— pick event —</option>
-                      {GROUPED_EVENTS.map(g => (
-                        <optgroup key={g.group} label={g.group}>
-                          {g.events.map(([id, label]) => (
-                            <option key={id} value={id}>{label}</option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                    {eventMappings.length > 1 && (
-                      <button
-                        className="import-mapping-remove"
-                        onClick={() => removeMapping(m.id)}
-                        aria-label="Remove"
-                      >×</button>
-                    )}
-                  </div>
-                ))}
-
-                <button className="import-mapping-add" onClick={addMapping}>
-                  + Add event block
+              {/* ── Mode toggle ── */}
+              <div className="import-mode-toggle">
+                <button
+                  className={`import-mode-btn${swimcloudMode === 'history' ? ' active' : ''}`}
+                  onClick={() => setSwimcloudMode('history')}
+                >
+                  Full career history
+                </button>
+                <button
+                  className={`import-mode-btn${swimcloudMode === 'meet' ? ' active' : ''}`}
+                  onClick={() => setSwimcloudMode('meet')}
+                >
+                  Meet results
                 </button>
               </div>
+
+              {swimcloudMode === 'history' && (
+                <>
+                  <ol className="import-steps">
+                    <li>Go to <strong>swimcloud.com</strong> and find your swimmer profile.</li>
+                    <li>Click the <strong>Times</strong> tab and copy the time rows for each event you want to import.</li>
+                    <li>Paste them below, with a <strong>blank line between each event's block</strong>. Then use the event list below to tell the parser which event each block belongs to.</li>
+                    <li className="import-step-note"><Info size={13} /><span>If your copy includes an event header line (e.g. <code>100 FREE SCY:</code>), the parser will detect it automatically — you can leave the list below empty.</span></li>
+                    <li className="import-step-note"><AlertTriangle size={13} /><span>Use the per-event Times tab, not the Best Times comparison table (which mixes courses on the same row).</span></li>
+                  </ol>
+
+                  {/* ── Manual event mapping ── */}
+                  <div className="import-mapping-block">
+                    <div className="import-mapping-header">
+                      <span className="import-mapping-title">Event order</span>
+                      <span className="import-mapping-hint">Match each block (separated by a blank line) to its event. Leave empty if your data has event header lines.</span>
+                    </div>
+
+                    {eventMappings.map((m, idx) => (
+                      <div key={m.id} className="import-mapping-row">
+                        <span className="import-mapping-num">Block {idx + 1}</span>
+                        <select
+                          className="import-mapping-select import-mapping-select--course"
+                          value={m.course}
+                          onChange={e => updateMapping(m.id, 'course', e.target.value)}
+                        >
+                          <option value="SCY">SCY</option>
+                          <option value="LCM">LCM</option>
+                          <option value="SCM">SCM</option>
+                        </select>
+                        <select
+                          className="import-mapping-select import-mapping-select--event"
+                          value={m.eventId}
+                          onChange={e => updateMapping(m.id, 'eventId', e.target.value)}
+                        >
+                          <option value="">— pick event —</option>
+                          {GROUPED_EVENTS.map(g => (
+                            <optgroup key={g.group} label={g.group}>
+                              {g.events.map(([id, label]) => (
+                                <option key={id} value={id}>{label}</option>
+                              ))}
+                            </optgroup>
+                          ))}
+                        </select>
+                        {eventMappings.length > 1 && (
+                          <button
+                            className="import-mapping-remove"
+                            onClick={() => removeMapping(m.id)}
+                            aria-label="Remove"
+                          >×</button>
+                        )}
+                      </div>
+                    ))}
+
+                    <button className="import-mapping-add" onClick={addMapping}>
+                      + Add event block
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {swimcloudMode === 'meet' && (
+                <div className="import-meet-section">
+                  <ol className="import-steps">
+                    <li>On Swimcloud, open a meet result page and find the event results table for your swims.</li>
+                    <li>Copy the rows (Event / Time / Imp / Place columns) and paste into the box below. One meet per block.</li>
+                    <li>Enter the meet name and the date you swam. Use <strong>Add another meet</strong> to import multiple meets at once.</li>
+                    <li className="import-step-note"><Info size={13} /><span>Events with "Y" in the name are imported as SCY; events with "M" are imported as LCM.</span></li>
+                  </ol>
+
+                  {meets.map((meet, idx) => (
+                    <div key={meet.id} className="import-meet-block">
+                      <div className="import-meet-block-header">
+                        <span className="import-meet-block-num">Meet {idx + 1}</span>
+                        {meets.length > 1 && (
+                          <button className="import-meet-remove" onClick={() => removeMeet(meet.id)}>Remove</button>
+                        )}
+                      </div>
+                      <div className="import-meet-fields">
+                        <div className="import-meet-field">
+                          <label className="import-label">Meet name</label>
+                          <input
+                            className="import-meet-name"
+                            type="text"
+                            placeholder="e.g. SCS JAG Championships"
+                            value={meet.name}
+                            onChange={e => updateMeet(meet.id, 'name', e.target.value)}
+                          />
+                        </div>
+                        <div className="import-meet-field import-meet-field--date">
+                          <label className="import-label">Date swum</label>
+                          <input
+                            className="import-meet-date"
+                            type="date"
+                            value={meet.date}
+                            max={new Date().toISOString().slice(0, 10)}
+                            onChange={e => updateMeet(meet.id, 'date', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <textarea
+                        className="import-textarea import-meet-textarea"
+                        placeholder={`Event\tTime\tImp\tPlace\n100 Y Free\t1:00.55\t–\t18th\n50 Y Free\t26.83\t-2.00\t19th`}
+                        value={meet.text}
+                        onChange={e => updateMeet(meet.id, 'text', e.target.value)}
+                        rows={6}
+                      />
+                    </div>
+                  ))}
+
+                  <button className="import-mapping-add import-meet-add-btn" onClick={addMeet}>
+                    + Add another meet
+                  </button>
+
+                  {parseError && (
+                    <p className="import-error">
+                      <AlertTriangle size={14} />
+                      {parseError}
+                    </p>
+                  )}
+
+                  <div className="import-actions">
+                    <button
+                      className="import-parse-btn"
+                      onClick={handleParse}
+                      disabled={meets.every(m => !m.text.trim())}
+                    >
+                      Parse Meet Times
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
@@ -645,7 +831,7 @@ export default function Import() {
         )}
 
         {/* ── Paste area (text sources) ── */}
-        {source !== 'pdf' && (
+        {source !== 'pdf' && !(source === 'swimcloud' && swimcloudMode === 'meet') && (
           <div className="import-card">
             <label className="import-label">Paste your times here</label>
             <textarea

@@ -1509,6 +1509,42 @@ button:active { transform: scale(0.96) !important; }
 }
 .dash-improve-close:hover { opacity: 1; }
 
+/* ── Goal progress banner ── */
+.dash-goal-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #faf5ff;
+  border: 1.5px solid #c4b5fd;
+  border-left: 5px solid #7c3aed;
+  border-radius: 12px;
+  padding: 14px 16px 14px 18px;
+  margin-bottom: 20px;
+}
+.dash-goal-banner-icon { color: #7c3aed; flex-shrink: 0; }
+.dash-goal-banner-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dash-goal-banner-body strong { font-size: 14px; font-weight: 800; color: #3b0764; }
+.dash-goal-banner-body span { font-size: 12px; color: #6b21a8; }
+.dash-goal-banner-view {
+  flex-shrink: 0;
+  background: #7c3aed;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.dash-goal-banner-view:hover { background: #6d28d9; }
+
 /* ── Import warning banner ── */
 .dash-import-banner {
   display: flex;

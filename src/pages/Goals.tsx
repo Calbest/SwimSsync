@@ -78,8 +78,8 @@ export default function Goals() {
   const [showSMART,    setShowSMART]    = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      const user = data.session?.user
+    supabase.auth.getUser().then(({ data }) => {
+      const user = data?.user
       if (!user) { navigate('/'); return }
       setGoals(user.user_metadata?.goals ?? [])
       setArchive(user.user_metadata?.goalArchive ?? [])
