@@ -465,9 +465,9 @@ export default function Progress() {
           {Object.keys(history).length > 0 && (
             <div className="prog-view-tabs">
               {([
-                { id: 'fastest',   label: '⚡ Fastest'   },
-                { id: 'by-meets',  label: '📅 By Meets'  },
-                { id: 'by-events', label: '⚡ By Events' },
+                { id: 'fastest',   label: 'Fastest'   },
+                { id: 'by-meets',  label: 'By Meets'  },
+                { id: 'by-events', label: 'By Events' },
               ] as { id: HistoryView; label: string }[]).map(tab => (
                 <button
                   key={tab.id}

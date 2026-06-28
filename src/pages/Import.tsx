@@ -314,15 +314,17 @@ interface MeetBlock { id: number; name: string; date: string; text: string }
 function parseMeetEventStr(eventStr: string): { course: Course; eventId: string; eventLabel: string } | null {
   const m = eventStr.trim().match(/^(\d+)\s+(Y|M)\s+(.+)$/i)
   if (!m) return null
-  const [, dist, courseChar, strokeStr] = m
+  const [, dist, courseChar, rawStroke] = m
   const course: Course = courseChar.toUpperCase() === 'Y' ? 'SCY' : 'LCM'
-  const stroke = strokeStr.trim().toLowerCase().replace(/\./g, '')
+  // Strip round suffixes: "FreeFinals" → "Free", "Backstroke Prelims" → "Backstroke"
+  const strokeStr = rawStroke.replace(/(Finals?|Prelims?|[A-Z]-Finals?|Semi-?Finals?|Heats?|Time\s*Trials?|Consolations?)$/gi, '').trim()
+  const stroke = strokeStr.toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ')
   let strokeId: string | null = null
-  if (/^(freestyle|free|fr)$/.test(stroke))           strokeId = 'free'
-  else if (/^(backstroke|back|bk)$/.test(stroke))     strokeId = 'back'
-  else if (/^(breaststroke|breast|br)$/.test(stroke)) strokeId = 'breast'
-  else if (/^(butterfly|fly|fl)$/.test(stroke))       strokeId = 'fly'
-  else if (/^(individual medley|im)$/.test(stroke))   strokeId = 'im'
+  if (/^(freestyle|free|fr)$/.test(stroke))                   strokeId = 'free'
+  else if (/^(backstroke|back|bk)$/.test(stroke))             strokeId = 'back'
+  else if (/^(breaststroke|breast|br)$/.test(stroke))         strokeId = 'breast'
+  else if (/^(butterfly|fly|fl)$/.test(stroke))               strokeId = 'fly'
+  else if (/^(individual medley|i\.?m\.?|im)$/.test(stroke))  strokeId = 'im'
   else return null
   const eventId = `${dist}-${strokeId}`
   const eventLabel = EVENT_LABEL[eventId] ?? `${dist} ${strokeId.charAt(0).toUpperCase() + strokeId.slice(1)}`
@@ -335,28 +337,32 @@ function parseMeetResults(meets: MeetBlock[]): ParsedRow[] {
   const map = new Map<string, { course: Course; eventId: string; eventLabel: string; entries: SwimEntry[] }>()
 
   for (const meet of meets) {
-    const date = meet.date || 'unknown'
+    const fallbackDate = meet.date || 'unknown'
     const lines = meet.text.split('\n').map(l => l.trim()).filter(Boolean)
     for (const line of lines) {
-      if (/^event\s+time/i.test(line)) continue
+      // Skip header rows
+      if (/^event\s+time/i.test(line) || /^time\s+standard/i.test(line)) continue
       const cols = line.split('\t')
       if (cols.length < 2) continue
       const eventStr = cols[0].trim()
-      const timeStr  = cols[1].trim()
-      if (!timeStr || timeStr === '–' || timeStr === '-' || /^(NT|DQ|DNS|SCR)$/i.test(timeStr)) continue
-      const timeMatch = timeStr.match(TIME_RE)
+      // Strip "PB" suffix SwimCloud appends to personal bests
+      const timeRaw  = cols[1].trim().replace(/PB$/i, '').trim()
+      if (!timeRaw || timeRaw === '–' || timeRaw === '-' || /^(NT|DQ|DNS|SCR)$/i.test(timeRaw)) continue
+      const timeMatch = timeRaw.match(TIME_RE)
       if (!timeMatch) continue
       const eventInfo = parseMeetEventStr(eventStr)
       if (!eventInfo) continue
       const key = `${eventInfo.course}-${eventInfo.eventId}`
       const time = timeMatch[1]
+      // SwimCloud new format has per-row date in cols[6] (MM/DD/YYYY)
+      const rowDate = cols.length >= 7 ? (extractDate(cols[6].trim()) ?? fallbackDate) : fallbackDate
       const existing = map.get(key)
       const meetName = meet.name.trim() || undefined
       if (existing) {
-        if (!existing.entries.some(e => e.date === date && e.time === time))
-          existing.entries.push({ date, time, meet: meetName })
+        if (!existing.entries.some(e => e.date === rowDate && e.time === time))
+          existing.entries.push({ date: rowDate, time, meet: meetName })
       } else {
-        map.set(key, { course: eventInfo.course, eventId: eventInfo.eventId, eventLabel: eventInfo.eventLabel, entries: [{ date, time, meet: meetName }] })
+        map.set(key, { course: eventInfo.course, eventId: eventInfo.eventId, eventLabel: eventInfo.eventLabel, entries: [{ date: rowDate, time, meet: meetName }] })
       }
     }
   }
@@ -369,6 +375,47 @@ function parseMeetResults(meets: MeetBlock[]): ParsedRow[] {
     if (ci !== 0) return ci
     return EVENT_ORDER.indexOf(a.eventId) - EVENT_ORDER.indexOf(b.eventId)
   })
+}
+
+// ─── SwimCloud event history parser ─────────────────────────────────────────
+// Handles the per-event Times tab format on SwimCloud:
+//   Time  Standard  Points  FINA  Age  Meet                              Meet Date
+//   26.79 BB        416          14   2026 CA Trident Swim Club          01/17/2026
+
+function parseSwimCloudEventHistory(raw: string, course: Course, eventId: string): ParsedRow[] | null {
+  if (!eventId) return null
+  const eventLabel = EVENT_LABEL[eventId] ?? eventId
+  const key = `${course}-${eventId}`
+  const entries: SwimEntry[] = []
+
+  for (const line of raw.split('\n').map(l => l.trim()).filter(Boolean)) {
+    if (/^(time|standard|points|fina|age|meet)/i.test(line)) continue
+    const cols = line.split('\t')
+    // Time is col[0], strip PB suffix
+    const timeRaw = cols[0]?.replace(/PB$/i, '').trim() ?? ''
+    const timeMatch = timeRaw.match(TIME_RE)
+    if (!timeMatch) continue
+    const time = timeMatch[1]
+
+    let meet: string | undefined
+    let date = 'unknown'
+
+    if (cols.length >= 7) {
+      // Full SwimCloud format: Time\tStandard\tPoints\tFINA\tAge\tMeet\tMeet Date
+      meet = cols[5]?.trim() || undefined
+      date = extractDate(cols[6]?.trim() ?? '') ?? 'unknown'
+    } else {
+      date = extractDate(line) ?? 'unknown'
+    }
+
+    if (!entries.some(e => e.date === date && e.time === time)) {
+      entries.push({ date, time, meet })
+    }
+  }
+
+  if (entries.length === 0) return null
+  const bestTime = entries.reduce((b, e) => toSec(e.time) < toSec(b.time) ? e : b).time
+  return [{ key, course, eventId, eventLabel, bestTime, entries, selected: true }]
 }
 
 // ─── PDF extraction ─────────────────────────────────────────────────────────
@@ -427,7 +474,10 @@ export default function Import() {
   const fileInputRef    = useRef<HTMLInputElement>(null)
   const mappingCounter  = useRef(1)
   const meetCounter     = useRef(1)
-  const [swimcloudMode, setSwimcloudMode] = useState<'history' | 'meet'>('history')
+  const [swimcloudMode, setSwimcloudMode] = useState<'history' | 'meet' | 'event-history'>('history')
+  const [evHistCourse,  setEvHistCourse]  = useState<Course>('SCY')
+  const [evHistEventId, setEvHistEventId] = useState('')
+  const [evHistText,    setEvHistText]    = useState('')
   const [meets,         setMeets]         = useState<MeetBlock[]>([{ id: 0, name: '', date: '', text: '' }])
   const [eventMappings, setEventMappings] = useState<EventMapping[]>([
     { id: 0, course: 'SCY', eventId: '' },
@@ -467,6 +517,21 @@ export default function Import() {
 
   function handleParse() {
     setParseError('')
+
+    if (source === 'swimcloud' && swimcloudMode === 'event-history') {
+      if (!evHistEventId) {
+        setParseError('Please select a course and event before parsing.')
+        return
+      }
+      const rows = parseSwimCloudEventHistory(evHistText, evHistCourse, evHistEventId)
+      if (!rows || rows.length === 0) {
+        setParseError('No times found. Make sure you pasted the event times table from SwimCloud — each row needs a time and date.')
+        return
+      }
+      setParsed(rows)
+      setStep('review')
+      return
+    }
 
     if (source === 'swimcloud' && swimcloudMode === 'meet') {
       const rows = parseMeetResults(meets)
@@ -684,6 +749,12 @@ export default function Import() {
                 >
                   Meet results
                 </button>
+                <button
+                  className={`import-mode-btn${swimcloudMode === 'event-history' ? ' active' : ''}`}
+                  onClick={() => setSwimcloudMode('event-history')}
+                >
+                  By event
+                </button>
               </div>
 
               {swimcloudMode === 'history' && (
@@ -746,6 +817,75 @@ export default function Import() {
                     </button>
                   </div>
                 </>
+              )}
+
+              {swimcloudMode === 'event-history' && (
+                <div className="import-meet-section">
+                  <ol className="import-steps">
+                    <li>On SwimCloud, go to your swimmer profile and click the <strong>Times</strong> tab.</li>
+                    <li>Click any event (e.g. "50 Free") to open that event's full history table.</li>
+                    <li>Click inside the table, <strong>Select All</strong> (Ctrl+A / Cmd+A) and <strong>Copy</strong>.</li>
+                    <li>Choose the matching course and event below, then paste.</li>
+                    <li className="import-step-note"><Info size={13} />Meet names and dates are detected automatically from the pasted rows.</li>
+                  </ol>
+
+                  <div className="import-mapping-block">
+                    <div className="import-mapping-header">
+                      <span className="import-mapping-title">Which event is this?</span>
+                    </div>
+                    <div className="import-mapping-row">
+                      <span className="import-mapping-num">Course</span>
+                      <select
+                        className="import-mapping-select import-mapping-select--course"
+                        value={evHistCourse}
+                        onChange={e => setEvHistCourse(e.target.value as Course)}
+                      >
+                        <option value="SCY">SCY</option>
+                        <option value="LCM">LCM</option>
+                        <option value="SCM">SCM</option>
+                      </select>
+                      <select
+                        className="import-mapping-select import-mapping-select--event"
+                        value={evHistEventId}
+                        onChange={e => setEvHistEventId(e.target.value)}
+                      >
+                        <option value="">— pick event —</option>
+                        {GROUPED_EVENTS.map(g => (
+                          <optgroup key={g.group} label={g.group}>
+                            {g.events.map(([id, label]) => (
+                              <option key={id} value={id}>{label}</option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <textarea
+                    className="import-textarea import-meet-textarea"
+                    placeholder={`Time\tStandard\tPoints\tFINA\tAge\tMeet\tMeet Date\n26.79\tBB\t416\t\t14\t2026 CA Trident Swim Club\t01/17/2026\n27.02\tBB\t398\t\t14\t2025 CA STOP December Meet\t12/06/2025`}
+                    value={evHistText}
+                    onChange={e => { setEvHistText(e.target.value); setParseError('') }}
+                    rows={10}
+                  />
+
+                  {parseError && (
+                    <p className="import-error">
+                      <AlertTriangle size={14} />
+                      {parseError}
+                    </p>
+                  )}
+
+                  <div className="import-actions">
+                    <button
+                      className="import-parse-btn"
+                      onClick={handleParse}
+                      disabled={!evHistText.trim() || !evHistEventId}
+                    >
+                      Parse Event Times
+                    </button>
+                  </div>
+                </div>
               )}
 
               {swimcloudMode === 'meet' && (
@@ -907,7 +1047,7 @@ export default function Import() {
         )}
 
         {/* ── Paste area (text sources) ── */}
-        {source !== 'pdf' && !(source === 'swimcloud' && swimcloudMode === 'meet') && (
+        {source !== 'pdf' && !(source === 'swimcloud' && (swimcloudMode === 'meet' || swimcloudMode === 'event-history')) && (
           <div className="import-card">
             <label className="import-label">Paste your times here</label>
             <textarea
