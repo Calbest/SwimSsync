@@ -46,31 +46,6 @@ function notifIcon(type: string) {
   return '📣'
 }
 
-const SCY_ORDER = [
-  'SCY-50-free','SCY-100-free','SCY-200-free','SCY-500-free','SCY-1000-free','SCY-1650-free',
-  'SCY-100-back','SCY-200-back','SCY-100-breast','SCY-200-breast',
-  'SCY-100-fly','SCY-200-fly','SCY-200-im','SCY-400-im',
-]
-const LCM_ORDER = [
-  'LCM-50-free','LCM-100-free','LCM-200-free','LCM-400-free','LCM-800-free','LCM-1500-free',
-  'LCM-100-back','LCM-200-back','LCM-100-breast','LCM-200-breast',
-  'LCM-100-fly','LCM-200-fly','LCM-200-im','LCM-400-im',
-]
-const EVENT_LABELS: Record<string, string> = {
-  'SCY-50-free':'50 Free','SCY-100-free':'100 Free','SCY-200-free':'200 Free',
-  'SCY-500-free':'500 Free','SCY-1000-free':'1000 Free','SCY-1650-free':'1650 Free',
-  'SCY-100-back':'100 Back','SCY-200-back':'200 Back',
-  'SCY-100-breast':'100 Breast','SCY-200-breast':'200 Breast',
-  'SCY-100-fly':'100 Fly','SCY-200-fly':'200 Fly',
-  'SCY-200-im':'200 IM','SCY-400-im':'400 IM',
-  'LCM-50-free':'50 Free','LCM-100-free':'100 Free','LCM-200-free':'200 Free',
-  'LCM-400-free':'400 Free','LCM-800-free':'800 Free','LCM-1500-free':'1500 Free',
-  'LCM-100-back':'100 Back','LCM-200-back':'200 Back',
-  'LCM-100-breast':'100 Breast','LCM-200-breast':'200 Breast',
-  'LCM-100-fly':'100 Fly','LCM-200-fly':'200 Fly',
-  'LCM-200-im':'200 IM','LCM-400-im':'400 IM',
-}
-
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function Avatar({ profile, size = 44 }: { profile: Pick<Profile, 'id'|'full_name'|'username'|'avatar_url'>; size?: number }) {
@@ -80,40 +55,6 @@ function Avatar({ profile, size = 44 }: { profile: Pick<Profile, 'id'|'full_name
   return (
     <div className="fr-avatar-init" style={{ width: size, height: size, background: avatarBg(profile.id), fontSize: size * 0.36 }}>
       {initials(profile.full_name, profile.username)}
-    </div>
-  )
-}
-
-function TimesPanel({ times }: { times: Record<string, string> }) {
-  const scyTimes = SCY_ORDER.filter(k => times[k])
-  const lcmTimes = LCM_ORDER.filter(k => times[k])
-  if (!scyTimes.length && !lcmTimes.length) {
-    return <p className="fr-no-times">No times recorded yet.</p>
-  }
-  return (
-    <div className="fr-times-wrap">
-      {scyTimes.length > 0 && (
-        <div className="fr-times-course">
-          <div className="fr-times-course-label">SCY</div>
-          {scyTimes.map(k => (
-            <div key={k} className="fr-time-row">
-              <span className="fr-time-event">{EVENT_LABELS[k]}</span>
-              <span className="fr-time-val">{times[k]}</span>
-            </div>
-          ))}
-        </div>
-      )}
-      {lcmTimes.length > 0 && (
-        <div className="fr-times-course">
-          <div className="fr-times-course-label">LCM</div>
-          {lcmTimes.map(k => (
-            <div key={k} className="fr-time-row">
-              <span className="fr-time-event">{EVENT_LABELS[k]}</span>
-              <span className="fr-time-val">{times[k]}</span>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   )
 }
