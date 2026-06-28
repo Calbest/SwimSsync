@@ -1293,7 +1293,8 @@ export default function Calendar() {
 
   const [schedDay,    setSchedDay]    = useState(1)
   const [s1Saved,     setS1Saved]     = useState(false)
-  const [s2dSaved,    setS2dSaved]    = useState(false)
+  const [s2Saved,     setS2Saved]     = useState(false)
+  const [drylandSaved, setDrylandSaved] = useState(false)
   const [repeatMode,  setRepeatMode]  = useState<'every' | 'next'>('every')
 
   const [dayModal,  setDayModal]  = useState<string | null>(null)
@@ -1388,10 +1389,16 @@ export default function Calendar() {
     if (repeatMode === 'next') applyDayToNextOccurrence('s1')
   }
 
-  function saveS2DryForDay() {
+  function saveS2ForDay() {
     handleSchedSave(sched)
-    setS2dSaved(true)
-    setTimeout(() => setS2dSaved(false), 2000)
+    setS2Saved(true)
+    setTimeout(() => setS2Saved(false), 2000)
+  }
+
+  function saveDrylandForDay() {
+    handleSchedSave(sched)
+    setDrylandSaved(true)
+    setTimeout(() => setDrylandSaved(false), 2000)
     if (repeatMode === 'next') applyDayToNextOccurrence('s2dry')
   }
 
@@ -1615,6 +1622,17 @@ export default function Calendar() {
                           />
                         </div>
                       </div>
+
+                      {dc.practice && dc.s2 && (
+                        <div className="cal-sched-save-row" style={{ marginTop: 8 }}>
+                          <button
+                            className={`cal-sched-save-btn${s2Saved ? ' saved' : ''}`}
+                            onClick={saveS2ForDay}
+                          >
+                            {s2Saved ? '✓ Saved' : 'Save Practice 2'}
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {/* ── Dryland area ── */}
@@ -1664,10 +1682,10 @@ export default function Calendar() {
                           <option value="next">Next {dayName} only</option>
                         </select>
                         <button
-                          className={`cal-sched-save-btn${s2dSaved ? ' saved' : ''}`}
-                          onClick={saveS2DryForDay}
+                          className={`cal-sched-save-btn${drylandSaved ? ' saved' : ''}`}
+                          onClick={saveDrylandForDay}
                         >
-                          {s2dSaved ? '✓ Saved' : 'Save Practice 2 & Dryland'}
+                          {drylandSaved ? '✓ Saved' : 'Save Dryland'}
                         </button>
                       </div>
                     </div>
@@ -1759,10 +1777,10 @@ export default function Calendar() {
                         isPrac   ? 'cal-cell--prac'     : '',
                         meet     ? 'cal-cell--meet'     : '',
                         isToday  ? 'cal-cell--today'    : '',
-                        'cal-cell--click',
+                        isPrac   ? 'cal-cell--click'    : '',
                       ].filter(Boolean).join(' ')}
                       style={{ '--ci': i } as React.CSSProperties}
-                      onClick={() => setDayModal(ds)}
+                      onClick={() => isPrac && setDayModal(ds)}
                     >
                       <span className={`cal-cell-num${isToday ? ' today' : ''}`}>{day}</span>
 
@@ -1805,6 +1823,16 @@ export default function Calendar() {
                             />
                           )}
                         </div>
+                      )}
+
+                      {!isPrac && !meet && (
+                        <button
+                          className="cal-cell-add-sched"
+                          onClick={e => { e.stopPropagation(); setShowSched(true) }}
+                          title="Add to schedule"
+                        >
+                          + Add to schedule
+                        </button>
                       )}
                     </div>
                   )

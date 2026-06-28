@@ -398,18 +398,13 @@
 
 /* ── Avatar as button ── */
 .fr-avatar-btn,
-.fr-hero-avatar-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
+.fr-hero-avatar {
   border-radius: 50%;
   flex-shrink: 0;
   display: flex;
-  transition: opacity 0.15s;
+  pointer-events: none;
+  user-select: none;
 }
-.fr-avatar-btn:hover,
-.fr-hero-avatar-btn:hover { opacity: 0.82; }
 
 /* ── Mutual badge + name row ── */
 .fr-user-name-row {

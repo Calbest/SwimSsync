@@ -387,6 +387,37 @@ export default function PublicProfile() {
         </div>
       )}
 
+      {/* ── Monthly Report ── */}
+      {profile.share_monthly_report && profile.latest_monthly_report && isFollowing && (
+        <div className="pub-section">
+          <h2 className="pub-section-title">
+            {(() => {
+              const r = profile.latest_monthly_report!
+              const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+              return `${months[r.month - 1]} ${r.year} Progress Report`
+            })()}
+          </h2>
+          <div className="pub-report-card">
+            <div className="pub-report-stat">
+              <span className="pub-report-val">{profile.latest_monthly_report.swiamsLogged}</span>
+              <span className="pub-report-label">swims logged</span>
+            </div>
+            <div className="pub-report-stat">
+              <span className="pub-report-val">{profile.latest_monthly_report.eventsImproved}</span>
+              <span className="pub-report-label">events improved</span>
+            </div>
+            {profile.latest_monthly_report.biggestDrop && (
+              <div className="pub-report-drop">
+                <span className="pub-report-drop-label">Best drop</span>
+                <span className="pub-report-drop-event">{profile.latest_monthly_report.biggestDrop.label}</span>
+                <span className="pub-report-drop-time">{profile.latest_monthly_report.biggestDrop.newTime}</span>
+                <span className="pub-report-drop-delta">−{profile.latest_monthly_report.biggestDrop.drop.toFixed(2)}s</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── Personal bests ── */}
       <div className="pub-section">
         <h2 className="pub-section-title">Personal Bests</h2>

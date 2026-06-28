@@ -629,6 +629,30 @@
 .cal-dot--dry   { border-radius: 3px; }
 .cal-cell--click:hover .cal-dot { transform: scale(1.2); }
 
+/* ─── Add-to-schedule button inside non-practice day cells ─────────────── */
+.cal-cell-add-sched {
+  display: none;
+  margin-top: 4px;
+  padding: 3px 6px;
+  border: 1px dashed #93c5fd;
+  border-radius: 6px;
+  background: transparent;
+  color: #3b82f6;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.cal-cell:hover .cal-cell-add-sched {
+  display: block;
+}
+.cal-cell-add-sched:hover {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #3b82f6;
+}
+
 /* ─── Legend ─────────────────────────────────────────────────────────────── */
 .cal-legend {
   display: flex;

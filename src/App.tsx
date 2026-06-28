@@ -60,14 +60,17 @@ function StarRating({ onDone }: { onDone?: () => void }) {
         </div>
         {selected > 0 && <p className="rating-label">{['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent!'][selected]}</p>}
         {selected > 0 && (
-          <textarea
-            className="rating-comment"
-            placeholder="Any comments? (optional)"
-            value={comment}
-            onChange={e => setComment(e.target.value)}
-            rows={3}
-            maxLength={500}
-          />
+          <div className="rating-comment-wrap">
+            <textarea
+              className="rating-comment"
+              placeholder="Any comments? (optional)"
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              rows={3}
+              maxLength={500}
+            />
+            <span className="rating-char-count">{comment.length}/500</span>
+          </div>
         )}
         <button className="rating-submit" onClick={submit} disabled={!selected || status === 'sending'}>
           {status === 'sending' ? 'Submitting…' : 'Submit Rating'}

@@ -15,6 +15,17 @@ export interface Profile {
   banner_type: string | null
   banner_value: string | null
   top_events: string[]
+  latest_monthly_report: MonthlyReport | null
+  share_monthly_report: boolean
+}
+
+export interface MonthlyReport {
+  year:           number
+  month:          number   // 1–12
+  swiamsLogged:   number
+  eventsImproved: number
+  biggestDrop:    { label: string; drop: number; newTime: string } | null
+  generatedAt:    string
 }
 
 export interface FeedNotif {
@@ -182,6 +193,33 @@ export async function writeMeetNotification(
       message:      `${name} is going to ${meet.name} on ${meet.date}${meet.time ? ` at ${meet.time}` : ''}.`,
       from_user_id: fromProfile.id,
       data:         { meetName: meet.name, meetDate: meet.date, meetTime: meet.time ?? '' },
+    }))
+    await supabase.from('notifications').insert(inserts)
+  } catch { /* notifications table may not exist yet */ }
+}
+
+export async function writeMonthlyReportNotification(
+  fromProfile: Pick<Profile, 'id' | 'full_name' | 'username' | 'avatar_url'>,
+  report: MonthlyReport,
+): Promise<void> {
+  try {
+    const { data: rows } = await supabase
+      .from('follows')
+      .select('follower_id')
+      .eq('following_id', fromProfile.id)
+      .limit(200)
+    if (!rows?.length) return
+
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    const name  = fromProfile.full_name || fromProfile.username
+    const label = `${months[report.month - 1]} ${report.year}`
+    const inserts = rows.map(row => ({
+      user_id:      row.follower_id,
+      type:         'monthly_report',
+      title:        `${name}'s ${label} Progress Report`,
+      message:      `${report.swiamsLogged} swim${report.swiamsLogged !== 1 ? 's' : ''} logged${report.eventsImproved > 0 ? `, ${report.eventsImproved} event${report.eventsImproved !== 1 ? 's' : ''} improved` : ''}${report.biggestDrop ? ` — best drop: ${report.biggestDrop.newTime} (−${report.biggestDrop.drop.toFixed(2)}s)` : ''}.`,
+      from_user_id: fromProfile.id,
+      data:         { year: report.year, month: report.month, fromUserId: fromProfile.id },
     }))
     await supabase.from('notifications').insert(inserts)
   } catch { /* notifications table may not exist yet */ }

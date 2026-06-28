@@ -6,9 +6,9 @@ import OnboardingModal from '../components/OnboardingModal'
 import { supabase } from '../lib/supabase'
 import {
   upsertProfile, getFollowCounts, getFollowing, getFeedNotifications,
-  markFeedNotifsRead,
+  markFeedNotifsRead, writeMonthlyReportNotification,
 } from '../lib/friends'
-import type { Profile as SwimProfile, FeedNotif } from '../lib/friends'
+import type { Profile as SwimProfile, FeedNotif, MonthlyReport } from '../lib/friends'
 import type { Goal } from './Goals'
 import { playClick, playNavigate } from '../lib/sounds'
 import './Dashboard.css'
@@ -509,6 +509,90 @@ export default function Dashboard() {
   const avatarFileRef = useRef<HTMLInputElement>(null)
   const userIdRef     = useRef('')
 
+  async function maybeGenerateMonthlyReport(user: { id: string; user_metadata: Record<string, unknown> }) {
+    const m = user.user_metadata
+    const now = new Date()
+    // Report is for the PREVIOUS month
+    const reportDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const reportKey  = `${reportDate.getFullYear()}-${String(reportDate.getMonth() + 1).padStart(2, '0')}`
+    const lastKey = (m.lastMonthlyReport as string | undefined) ?? ''
+    if (lastKey === reportKey) return // already generated
+
+    const history = (m.timeHistory as Record<string, { date: string; time: string }[]> | undefined) ?? {}
+    const monthPrefix = reportKey // "YYYY-MM"
+    let swiamsLogged = 0
+    const evKeySet = new Set<string>()
+    let biggestDrop: { label: string; drop: number; newTime: string } | null = null
+
+    // Parse a time string to seconds
+    function toSec(t: string): number | null {
+      if (!t) return null
+      const parts = t.split(':')
+      return parts.length === 2 ? parseFloat(parts[0]) * 60 + parseFloat(parts[1]) : parseFloat(parts[0])
+    }
+
+    // Full event label map
+    const labelMap: Record<string, string> = {}
+    const addGroup = (course: string, groups: { stroke: string; events: { id: string; label: string }[] }[]) => {
+      groups.forEach(g => g.events.forEach(e => { labelMap[`${course}-${e.id}`] = `${course} ${g.stroke} ${e.label}` }))
+    }
+    addGroup('SCY', SCY_EVENTS as typeof SCY_EVENTS)
+    addGroup('LCM', LCM_EVENTS as typeof LCM_EVENTS)
+
+    Object.entries(history).forEach(([key, entries]) => {
+      const monthEntries = entries.filter(e => e.date?.startsWith(monthPrefix))
+      swiamsLogged += monthEntries.length
+      if (!monthEntries.length) return
+      evKeySet.add(key)
+      // Find best time in the month
+      const monthBest = monthEntries.map(e => toSec(e.time)).filter(Boolean).sort((a, b) => (a as number) - (b as number))[0]
+      // Find best time before this month
+      const prevEntries = entries.filter(e => e.date && e.date < monthPrefix)
+      if (!prevEntries.length || monthBest === null) return
+      const prevBest = prevEntries.map(e => toSec(e.time)).filter(Boolean).sort((a, b) => (a as number) - (b as number))[0]
+      if (prevBest === null || prevBest === undefined || monthBest >= prevBest) return
+      const drop = prevBest - monthBest
+      if (!biggestDrop || drop > biggestDrop.drop) {
+        biggestDrop = { label: labelMap[key] ?? key, drop, newTime: monthEntries.find(e => toSec(e.time) === monthBest)?.time ?? '' }
+      }
+    })
+
+    const report: MonthlyReport = {
+      year:           reportDate.getFullYear(),
+      month:          reportDate.getMonth() + 1,
+      swiamsLogged,
+      eventsImproved: evKeySet.size,
+      biggestDrop:    biggestDrop ?? null,
+      generatedAt:    new Date().toISOString(),
+    }
+
+    // Save to user metadata and profiles table
+    const privacy = (m.privacySettings as Record<string, boolean> | undefined) ?? {}
+    const shareReport = privacy.shareMonthlyReport !== false
+    await supabase.auth.updateUser({
+      data: {
+        lastMonthlyReport: reportKey,
+        latestMonthlyReport: report,
+      },
+    })
+    if (shareReport) {
+      try {
+        await supabase.from('profiles').update({
+          latest_monthly_report: report,
+          share_monthly_report: true,
+        }).eq('id', user.id)
+      } catch { /* column may not exist yet */ }
+
+      const fromProfile = {
+        id: user.id,
+        full_name: (m.full_name as string | null) ?? null,
+        username:  (m.username  as string) || '',
+        avatar_url: (m.avatar_url as string | null) ?? null,
+      }
+      if (swiamsLogged > 0) writeMonthlyReportNotification(fromProfile, report)
+    }
+  }
+
   async function handleAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -577,8 +661,10 @@ export default function Dashboard() {
         banner_value: user.user_metadata?.bannerValue || null,
         top_events:   (user.user_metadata?.topEvents as string[] | undefined) ?? [],
       })
+      // Monthly report check (runs async in background, no UI block)
+      maybeGenerateMonthlyReport({ id: user.id, user_metadata: user.user_metadata ?? {} })
     })
-  }, [navigate])
+  }, [navigate]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const bestImprovement = getBestImprovement(timeHistory)
   const bestGoalProgress = getBestGoalProgress(goals, times)

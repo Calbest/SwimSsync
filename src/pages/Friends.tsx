@@ -39,8 +39,9 @@ function relativeTime(iso: string): string {
 }
 
 function notifIcon(type: string) {
-  if (type === 'pb')   return '🏊'
-  if (type === 'meet') return '📅'
+  if (type === 'pb')             return '🏊'
+  if (type === 'meet')           return '📅'
+  if (type === 'monthly_report') return '📊'
   return '📣'
 }
 
@@ -123,6 +124,7 @@ export default function Friends() {
   const [params]    = useSearchParams()
 
   const [myId,          setMyId]          = useState('')
+  const [myMetaName,    setMyMetaName]    = useState<string | null>(null)
   const [myProfile,     setMyProfile]     = useState<Profile | null>(null)
   const [tab,           setTab]           = useState<Tab>((params.get('tab') as Tab) || 'followers')
   const [followers,     setFollowers]     = useState<Profile[]>([])
@@ -146,6 +148,7 @@ export default function Friends() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { navigate('/'); return }
       setMyId(user.id)
+      setMyMetaName((user.user_metadata?.full_name as string | null) ?? null)
 
       const [profileRes, followersRes, followingRes, notifs] = await Promise.all([
         getProfile(user.id),
@@ -297,7 +300,7 @@ export default function Friends() {
     )
   }
 
-  const activityNotifs = feedNotifs.filter(n => n.type === 'pb' || n.type === 'meet')
+  const activityNotifs = feedNotifs.filter(n => n.type === 'pb' || n.type === 'meet' || n.type === 'monthly_report')
   const unreadActivityCount = activityNotifs.filter(n => !n.read).length
 
   const listToShow: Profile[] =
@@ -322,15 +325,11 @@ export default function Friends() {
 
       {/* ── My profile block ── */}
       <div className="fr-hero">
-        <button
-          className="fr-hero-avatar-btn"
-          onClick={() => myId && navigate(`/profile/${myId}`)}
-          title="View your public profile"
-        >
-          <Avatar profile={myProfile ?? { id: myId, full_name: null, username: '…', avatar_url: null }} size={84} />
-        </button>
+        <div className="fr-hero-avatar">
+          <Avatar profile={myProfile ?? { id: myId || 'me', full_name: myMetaName, username: myMetaName || 'me', avatar_url: null }} size={84} />
+        </div>
         <div className="fr-hero-info">
-          <h1 className="fr-hero-name">{myProfile?.full_name || myProfile?.username || '…'}</h1>
+          <h1 className="fr-hero-name">{myProfile?.full_name || myMetaName || myProfile?.username || '—'}</h1>
           <p className="fr-hero-username">@{myProfile?.username || '—'}</p>
           {myProfile?.club_team && <p className="fr-hero-club">{myProfile.club_team}</p>}
         </div>
@@ -417,6 +416,8 @@ export default function Friends() {
                   if (n.data?.meetDate) params.set('prefill_date', n.data.meetDate as string)
                   if (n.data?.meetTime) params.set('prefill_time', n.data.meetTime as string)
                   navigate(`/calendar?${params.toString()}`)
+                } else if (n.type === 'monthly_report' && n.from_user_id) {
+                  navigate(`/profile/${n.from_user_id}`)
                 } else if (n.from_user_id) {
                   navigate(`/profile/${n.from_user_id}`)
                 }

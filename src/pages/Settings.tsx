@@ -132,9 +132,10 @@ export default function Settings() {
 
   // Privacy
   const [privacySettings, setPrivacySettings] = useState({
-    sharePBs:       true,
-    shareMeets:     true,
-    privateAccount: false,
+    sharePBs:           true,
+    shareMeets:         true,
+    shareMonthlyReport: true,
+    privateAccount:     false,
   })
   const [privacyStatus, setPrivacyStatus] = useState<SaveStatus>('idle')
   const [blockQuery,    setBlockQuery]    = useState('')
@@ -1183,8 +1184,9 @@ export default function Settings() {
           </p>
           <div className="notif-list">
             {([
-              { key: 'sharePBs'   as const, label: 'Share personal bests',    desc: 'Notify your followers when you set a new PR' },
-              { key: 'shareMeets' as const, label: 'Share upcoming meets',     desc: 'Let followers see meets you add to your calendar' },
+              { key: 'sharePBs'           as const, label: 'Share personal bests',      desc: 'Notify your followers when you set a new PR' },
+              { key: 'shareMeets'         as const, label: 'Share upcoming meets',       desc: 'Let followers see meets you add to your calendar' },
+              { key: 'shareMonthlyReport' as const, label: 'Share monthly progress report', desc: 'Send followers a summary of your training each month' },
             ]).map(({ key, label, desc }) => (
               <div key={key} className="notif-row">
                 <div className="notif-row-text">
