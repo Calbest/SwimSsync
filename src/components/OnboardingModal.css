@@ -357,6 +357,255 @@
   100% { opacity: 0; transform: scale(1.5) translateY(-20px); }
 }
 
+/* Import */
+.ob-visual--import {
+  background: #0f172a;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+}
+.ob-import-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  opacity: 0.85;
+}
+.ob-import-badge {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #f59e0b;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* Compare */
+.ob-visual--compare {
+  background: #f8fafc;
+  padding: 14px;
+}
+.ob-compare-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 12px 14px;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0,40,85,0.06);
+}
+.ob-compare-header {
+  font-size: 11px;
+  font-weight: 800;
+  color: #002855;
+  margin-bottom: 8px;
+  letter-spacing: 0.2px;
+}
+.ob-compare-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.ob-compare-row:last-child { border-bottom: none; }
+.ob-compare-event { font-size: 11px; font-weight: 600; color: #334155; flex: 1; }
+.ob-compare-cut {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 20px;
+  letter-spacing: 0.2px;
+}
+.ob-compare-time { font-size: 11px; font-weight: 700; color: #0f172a; font-variant-numeric: tabular-nums; }
+
+/* Competitions */
+.ob-visual--competitions {
+  background: #f8fafc;
+  padding: 14px;
+}
+.ob-comp-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 12px 14px;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0,40,85,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ob-comp-badge {
+  font-size: 9px;
+  font-weight: 800;
+  background: #dbeafe;
+  color: #1d4ed8;
+  padding: 2px 8px;
+  border-radius: 20px;
+  align-self: flex-start;
+}
+.ob-comp-meet { font-size: 13px; font-weight: 800; color: #002855; }
+.ob-comp-date { font-size: 10px; color: #64748b; }
+.ob-comp-events { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 2px; }
+.ob-comp-event {
+  font-size: 9px;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+.ob-comp-event--qual { background: #dcfce7; color: #16a34a; }
+.ob-comp-footer { font-size: 10px; font-weight: 700; color: #16a34a; margin-top: 2px; }
+
+/* Goals */
+.ob-visual--goals {
+  background: #f8fafc;
+  padding: 14px;
+}
+.ob-goal-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 12px 14px;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0,40,85,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ob-goal-header { font-size: 11px; font-weight: 800; color: #002855; }
+.ob-goal-row { display: flex; flex-direction: column; gap: 4px; }
+.ob-goal-row-top { display: flex; justify-content: space-between; align-items: center; }
+.ob-goal-event { font-size: 11px; font-weight: 700; color: #334155; }
+.ob-goal-times { font-size: 10px; color: #64748b; font-variant-numeric: tabular-nums; }
+.ob-goal-bar-bg { height: 6px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+.ob-goal-bar-fill { height: 100%; background: linear-gradient(90deg, #002855, #0077b6); border-radius: 99px; transition: width 0.4s; }
+
+/* Progress */
+.ob-visual--progress {
+  background: #f8fafc;
+  padding: 14px;
+}
+.ob-prog-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 12px 14px;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0,40,85,0.06);
+}
+.ob-prog-header { font-size: 11px; font-weight: 800; color: #002855; margin-bottom: 8px; }
+.ob-prog-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 75px;
+  padding: 0 4px;
+}
+.ob-prog-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  flex: 1;
+  justify-content: flex-end;
+}
+.ob-prog-bar {
+  width: 100%;
+  background: linear-gradient(180deg, #0077b6 0%, #002855 100%);
+  border-radius: 4px 4px 0 0;
+  opacity: 0.18;
+}
+.ob-prog-dot {
+  width: 7px;
+  height: 7px;
+  background: #0077b6;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1.5px #0077b6;
+  margin-top: -4px;
+  position: relative;
+  z-index: 1;
+}
+.ob-prog-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 4px 0;
+}
+.ob-prog-label { font-size: 8px; color: #94a3b8; font-weight: 600; }
+.ob-prog-improvement {
+  font-size: 11px;
+  font-weight: 800;
+  color: #16a34a;
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* Media */
+.ob-visual--media {
+  background: #f8fafc;
+  padding: 14px;
+}
+.ob-media-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 12px 14px;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0,40,85,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ob-media-header { font-size: 11px; font-weight: 800; color: #002855; margin-bottom: 6px; }
+.ob-media-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.ob-media-row:last-child { border-bottom: none; }
+.ob-media-icon { font-size: 14px; flex-shrink: 0; }
+.ob-media-info { display: flex; flex-direction: column; gap: 1px; }
+.ob-media-name { font-size: 10px; font-weight: 700; color: #334155; }
+.ob-media-sub { font-size: 9px; color: #94a3b8; }
+
+/* Settings */
+.ob-visual--settings {
+  background: #f8fafc;
+  padding: 14px;
+}
+.ob-settings-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 12px 14px;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0,40,85,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ob-settings-header { font-size: 11px; font-weight: 800; color: #002855; margin-bottom: 6px; }
+.ob-settings-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.ob-settings-row:last-child { border-bottom: none; }
+.ob-settings-icon { font-size: 13px; flex-shrink: 0; }
+.ob-settings-label { font-size: 11px; font-weight: 600; color: #334155; flex: 1; }
+.ob-settings-arrow { font-size: 14px; color: #cbd5e1; }
+
 /* ── Text ── */
 .ob-text {
   text-align: center;
