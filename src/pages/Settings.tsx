@@ -32,6 +32,32 @@ const COLOR_PRESETS = [
 const CANVAS_BG_FROM = '#001a3d'
 const CANVAS_BG_TO   = '#002855'
 
+const ALL_EVENTS_GROUPED = [
+  { group: 'SCY — Freestyle', events: [
+    { key: 'SCY-50-free', label: '50 Free' }, { key: 'SCY-100-free', label: '100 Free' },
+    { key: 'SCY-200-free', label: '200 Free' }, { key: 'SCY-500-free', label: '500 Free' },
+    { key: 'SCY-1000-free', label: '1000 Free' }, { key: 'SCY-1650-free', label: '1650 Free' },
+  ]},
+  { group: 'SCY — Back / Breast / Fly / IM', events: [
+    { key: 'SCY-100-back', label: '100 Back' }, { key: 'SCY-200-back', label: '200 Back' },
+    { key: 'SCY-100-breast', label: '100 Breast' }, { key: 'SCY-200-breast', label: '200 Breast' },
+    { key: 'SCY-100-fly', label: '100 Fly' }, { key: 'SCY-200-fly', label: '200 Fly' },
+    { key: 'SCY-200-im', label: '200 IM' }, { key: 'SCY-400-im', label: '400 IM' },
+  ]},
+  { group: 'LCM — Freestyle', events: [
+    { key: 'LCM-50-free', label: '50 Free' }, { key: 'LCM-100-free', label: '100 Free' },
+    { key: 'LCM-200-free', label: '200 Free' }, { key: 'LCM-400-free', label: '400 Free' },
+    { key: 'LCM-800-free', label: '800 Free' }, { key: 'LCM-1500-free', label: '1500 Free' },
+  ]},
+  { group: 'LCM — Back / Breast / Fly / IM', events: [
+    { key: 'LCM-100-back', label: '100 Back' }, { key: 'LCM-200-back', label: '200 Back' },
+    { key: 'LCM-100-breast', label: '100 Breast' }, { key: 'LCM-200-breast', label: '200 Breast' },
+    { key: 'LCM-100-fly', label: '100 Fly' }, { key: 'LCM-200-fly', label: '200 Fly' },
+    { key: 'LCM-200-im', label: '200 IM' }, { key: 'LCM-400-im', label: '400 IM' },
+  ]},
+]
+
+
 function formatBirthday(isoDate: string): string {
   if (!isoDate) return ''
   const [y, m, d] = isoDate.split('-')
@@ -72,6 +98,10 @@ export default function Settings() {
   const [avatarPreview, setAvatarPreview] = useState('')
   const [avatarStatus,  setAvatarStatus]  = useState<'idle'|'uploading'|'saved'|'error'>('idle')
 
+  // Top Events
+  const [topEvents,      setTopEvents]      = useState<string[]>(['', '', ''])
+  const [topEventsStatus, setTopEventsStatus] = useState<SaveStatus>('idle')
+
   // Banner
   const [bannerType,   setBannerType]   = useState<BannerType>('default')
   const [bannerValue,  setBannerValue]  = useState('')
@@ -82,7 +112,7 @@ export default function Settings() {
   const [isEraser,     setIsEraser]     = useState(false)
 
   // Active tab
-  const [settingsTab,    setSettingsTab]    = useState<'profile' | 'account' | 'tutorial'>('profile')
+  const [settingsTab,    setSettingsTab]    = useState<'profile' | 'account' | 'privacy' | 'tutorial'>('profile')
   const [tutSlide,       setTutSlide]       = useState(0)
   const [showOnboarding, setShowOnboarding] = useState(false)
 
@@ -100,6 +130,19 @@ export default function Settings() {
   })
   const [notifStatus, setNotifStatus] = useState<SaveStatus>('idle')
 
+  // Privacy
+  const [privacySettings, setPrivacySettings] = useState({
+    sharePBs:       true,
+    shareMeets:     true,
+    privateAccount: false,
+  })
+  const [privacyStatus, setPrivacyStatus] = useState<SaveStatus>('idle')
+  const [blockQuery,    setBlockQuery]    = useState('')
+  const [blockResults,  setBlockResults]  = useState<{ id: string; username: string; full_name: string | null }[]>([])
+  const [blockSearching, setBlockSearching] = useState(false)
+  const [blockedUsers,  setBlockedUsers]  = useState<{ id: string; username: string; full_name: string | null }[]>([])
+  const blockTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // Delete account
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [deleteStatus,  setDeleteStatus]  = useState<'idle'|'loading'|'error'>('idle')
@@ -113,7 +156,8 @@ export default function Settings() {
   const [confirmPass, setConfirmPass] = useState('')
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    async function load() {
+      const { data } = await supabase.auth.getSession()
       const user = data.session?.user
       if (!user) { navigate('/'); return }
       const m = user.user_metadata ?? {}
@@ -130,7 +174,29 @@ export default function Settings() {
       setBannerType((m.bannerType as BannerType) ?? 'default')
       setBannerValue(m.bannerValue ?? '')
       if (m.notifPrefs) setNotifPrefs(prev => ({ ...prev, ...m.notifPrefs }))
-    })
+      if (m.privacySettings) setPrivacySettings(prev => ({ ...prev, ...m.privacySettings }))
+      if (m.topEvents) setTopEvents(prev => {
+        const arr = [...prev]
+        ;(m.topEvents as string[]).forEach((v, i) => { arr[i] = v })
+        return arr
+      })
+      // Load blocked users
+      try {
+        const { data: blocks } = await supabase
+          .from('blocks')
+          .select('blocked_id')
+          .eq('blocker_id', user.id)
+        if (blocks?.length) {
+          const ids = blocks.map((b: { blocked_id: string }) => b.blocked_id)
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, username, full_name')
+            .in('id', ids)
+          if (profiles) setBlockedUsers(profiles as typeof blockedUsers)
+        }
+      } catch { /* blocks table may not exist yet */ }
+    }
+    load()
   }, [navigate])
 
   // ── Canvas helpers ────────────────────────────────────────────────────────
@@ -246,6 +312,7 @@ export default function Settings() {
       dob:          m.dob        || null,
       banner_type:  type,
       banner_value: value,
+      top_events:   (m.topEvents as string[] | undefined) ?? [],
     })
   }
 
@@ -306,6 +373,20 @@ export default function Settings() {
     if (error) { setProfileStatus('error'); return }
     setProfileStatus('saved')
     setTimeout(() => setProfileStatus('idle'), 2500)
+  }
+
+  async function saveTopEvents() {
+    setTopEventsStatus('saving')
+    const filtered = topEvents.filter(Boolean)
+    const { error } = await supabase.auth.updateUser({ data: { topEvents: filtered } })
+    if (error) { setTopEventsStatus('error'); return }
+    if (userId) {
+      try {
+        await supabase.from('profiles').update({ top_events: filtered }).eq('id', userId)
+      } catch { /* column may not exist yet */ }
+    }
+    setTopEventsStatus('saved')
+    setTimeout(() => setTopEventsStatus('idle'), 2500)
   }
 
   async function saveUsername() {
@@ -412,6 +493,54 @@ export default function Settings() {
     navigate('/')
   }
 
+  async function savePrivacySettings() {
+    setPrivacyStatus('saving')
+    const { error } = await supabase.auth.updateUser({ data: { privacySettings } })
+    if (error) { setPrivacyStatus('error'); return }
+    // Sync is_private to profiles table
+    if (userId) {
+      try {
+        await supabase.from('profiles').update({ is_private: privacySettings.privateAccount }).eq('id', userId)
+      } catch { /* column may not exist yet */ }
+    }
+    setPrivacyStatus('saved')
+    setTimeout(() => setPrivacyStatus('idle'), 2500)
+  }
+
+  function togglePrivacy(key: keyof typeof privacySettings) {
+    setPrivacySettings(p => ({ ...p, [key]: !p[key] }))
+  }
+
+  async function searchBlockUsers(q: string) {
+    if (!q.trim()) { setBlockResults([]); setBlockSearching(false); return }
+    setBlockSearching(true)
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, username, full_name')
+      .or(`username.ilike.%${q}%,full_name.ilike.%${q}%`)
+      .neq('id', userId)
+      .limit(8)
+    setBlockResults((data ?? []) as typeof blockResults)
+    setBlockSearching(false)
+  }
+
+  async function blockUser(profile: { id: string; username: string; full_name: string | null }) {
+    if (blockedUsers.some(u => u.id === profile.id)) return
+    try {
+      await supabase.from('blocks').insert({ blocker_id: userId, blocked_id: profile.id })
+      setBlockedUsers(prev => [...prev, profile])
+      setBlockQuery('')
+      setBlockResults([])
+    } catch { /* blocks table may not exist yet */ }
+  }
+
+  async function unblockUser(id: string) {
+    try {
+      await supabase.from('blocks').delete().eq('blocker_id', userId).eq('blocked_id', id)
+      setBlockedUsers(prev => prev.filter(u => u.id !== id))
+    } catch { /* blocks table may not exist yet */ }
+  }
+
   const displayAvatar = avatarPreview || avatarUrl
 
   return (
@@ -443,6 +572,12 @@ export default function Settings() {
             onClick={() => setSettingsTab('account')}
           >
             Account &amp; Security
+          </button>
+          <button
+            className={`settings-tab${settingsTab === 'privacy' ? ' active' : ''}`}
+            onClick={() => setSettingsTab('privacy')}
+          >
+            Privacy
           </button>
           <button
             className={`settings-tab${settingsTab === 'tutorial' ? ' active' : ''}`}
@@ -762,6 +897,45 @@ export default function Settings() {
           </div>
         </section>
 
+        {/* ── Top 3 Events ── */}
+        <section className="settings-card">
+          <h2 className="settings-section-title">Top 3 Events</h2>
+          <p className="settings-hint" style={{ marginBottom: 16 }}>
+            Pick your 3 best or favorite events in order. They'll show on your public profile and be suggested in the Event Planner.
+          </p>
+          {[0, 1, 2].map(i => (
+            <div key={i} className="settings-field">
+              <label className="settings-label">#{i + 1} Event</label>
+              <select
+                className="settings-input"
+                value={topEvents[i] ?? ''}
+                onChange={e => setTopEvents(prev => { const arr = [...prev]; arr[i] = e.target.value; return arr })}
+              >
+                <option value="">— Select event —</option>
+                {ALL_EVENTS_GROUPED.map(g => (
+                  <optgroup label={g.group} key={g.group}>
+                    {g.events.map(ev => (
+                      <option key={ev.key} value={ev.key}
+                        disabled={topEvents.some((v, j) => j !== i && v === ev.key)}
+                      >
+                        {`${ev.key.startsWith('SCY') ? 'SCY' : 'LCM'} ${ev.label}`}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+          ))}
+          <div className="settings-footer" style={{ marginTop: 16 }}>
+            <button className="settings-save-btn" onClick={saveTopEvents} disabled={topEventsStatus === 'saving'}>
+              <Save size={15} />
+              {topEventsStatus === 'saving' ? 'Saving…' : 'Save Top Events'}
+            </button>
+            {topEventsStatus === 'saved' && <span className="status-saved">Saved!</span>}
+            {topEventsStatus === 'error'  && <span className="status-error">Error saving.</span>}
+          </div>
+        </section>
+
         </>}
 
         {settingsTab === 'account' && <>
@@ -994,6 +1168,116 @@ export default function Settings() {
                 </p>
               )}
             </div>
+          )}
+        </section>
+
+        </>}
+
+        {settingsTab === 'privacy' && <>
+
+        {/* ── Sharing ── */}
+        <section className="settings-card">
+          <h2 className="settings-section-title">Activity Sharing</h2>
+          <p className="settings-hint" style={{ marginBottom: 20 }}>
+            Control what your followers can see about you.
+          </p>
+          <div className="notif-list">
+            {([
+              { key: 'sharePBs'   as const, label: 'Share personal bests',    desc: 'Notify your followers when you set a new PR' },
+              { key: 'shareMeets' as const, label: 'Share upcoming meets',     desc: 'Let followers see meets you add to your calendar' },
+            ]).map(({ key, label, desc }) => (
+              <div key={key} className="notif-row">
+                <div className="notif-row-text">
+                  <span className="notif-row-label">{label}</span>
+                  <span className="notif-row-desc">{desc}</span>
+                </div>
+                <button
+                  role="switch"
+                  aria-checked={privacySettings[key]}
+                  className={`notif-toggle${privacySettings[key] ? ' on' : ''}`}
+                  onClick={() => togglePrivacy(key)}
+                >
+                  <span className="notif-toggle-thumb" />
+                </button>
+              </div>
+            ))}
+            <div className="notif-row">
+              <div className="notif-row-text">
+                <span className="notif-row-label">Private account</span>
+                <span className="notif-row-desc">Only your followers can view your profile — others see a locked page</span>
+              </div>
+              <button
+                role="switch"
+                aria-checked={privacySettings.privateAccount}
+                className={`notif-toggle${privacySettings.privateAccount ? ' on' : ''}`}
+                onClick={() => togglePrivacy('privateAccount')}
+              >
+                <span className="notif-toggle-thumb" />
+              </button>
+            </div>
+          </div>
+          <div className="settings-footer" style={{ marginTop: 24 }}>
+            <button className="settings-save-btn" onClick={savePrivacySettings} disabled={privacyStatus === 'saving'}>
+              <Save size={15} />
+              {privacyStatus === 'saving' ? 'Saving…' : 'Save Privacy Settings'}
+            </button>
+            {privacyStatus === 'saved'  && <span className="status-saved">Saved!</span>}
+            {privacyStatus === 'error'  && <span className="status-error">Error saving.</span>}
+          </div>
+        </section>
+
+        {/* ── Blocked Users ── */}
+        <section className="settings-card">
+          <h2 className="settings-section-title">Blocked Users</h2>
+          <p className="settings-hint" style={{ marginBottom: 16 }}>
+            Blocked users cannot view your profile. Search by name or username to block someone.
+          </p>
+          <div className="settings-block-search-wrap">
+            <input
+              className="settings-input"
+              placeholder="Search by name or username…"
+              value={blockQuery}
+              onChange={e => {
+                setBlockQuery(e.target.value)
+                if (blockTimer.current) clearTimeout(blockTimer.current)
+                blockTimer.current = setTimeout(() => searchBlockUsers(e.target.value), 350)
+              }}
+            />
+            {blockSearching && <span className="settings-hint" style={{ marginTop: 6 }}>Searching…</span>}
+          </div>
+          {blockResults.length > 0 && (
+            <div className="settings-block-results">
+              {blockResults.map(p => (
+                <div key={p.id} className="settings-block-result-row">
+                  <span className="settings-block-result-name">{p.full_name || p.username}</span>
+                  <span className="settings-block-result-handle">@{p.username}</span>
+                  <button
+                    className="settings-block-btn"
+                    onClick={() => blockUser(p)}
+                    disabled={blockedUsers.some(u => u.id === p.id)}
+                  >
+                    {blockedUsers.some(u => u.id === p.id) ? 'Blocked' : 'Block'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {blockedUsers.length > 0 && (
+            <div className="settings-blocked-list">
+              <p className="settings-hint" style={{ marginBottom: 10, fontWeight: 600 }}>Currently blocked</p>
+              {blockedUsers.map(u => (
+                <div key={u.id} className="settings-block-result-row">
+                  <span className="settings-block-result-name">{u.full_name || u.username}</span>
+                  <span className="settings-block-result-handle">@{u.username}</span>
+                  <button className="settings-unblock-btn" onClick={() => unblockUser(u.id)}>
+                    Unblock
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {blockedUsers.length === 0 && (
+            <p className="settings-hint" style={{ marginTop: 16 }}>You haven't blocked anyone.</p>
           )}
         </section>
 

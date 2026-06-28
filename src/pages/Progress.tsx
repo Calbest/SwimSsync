@@ -453,7 +453,7 @@ export default function Progress() {
             </div>
           )}
 
-          {/* ── Top row: controls + specialty chart ── */}
+          {/* ── Top row: controls (left) + specialty chart + stats (right) ── */}
           <div className="prog-top-row">
             <div className="prog-controls-wrap">
 
@@ -487,40 +487,42 @@ export default function Progress() {
             </div>
           </div>
             </div>{/* end prog-controls-wrap */}
-            <SpecialtyChart times={dashTimes} course={course} />
-          </div>{/* end prog-top-row */}
 
-          {/* ── Stat chips ── */}
-          {entries.length >= 1 && (
-            <div className="prog-stats">
-              <div className="prog-stat">
-                <span className="prog-stat-label">Swims logged</span>
-                <span className="prog-stat-value">{entries.length}</span>
-              </div>
-              <div className="prog-stat">
-                <span className="prog-stat-label">Best time</span>
-                <span className="prog-stat-value prog-stat-value--blue">{fastest?.time ?? '—'}</span>
-              </div>
-              {datedEntries.length >= 2 && (
-                <div className="prog-stat">
-                  <span className="prog-stat-label">Overall change</span>
-                  <span className={`prog-stat-value${delta !== null && delta < 0 ? ' prog-stat-value--green' : delta !== null && delta > 0 ? ' prog-stat-value--red' : ''}`}>
-                    {delta !== null
-                      ? `${delta < 0 ? '−' : '+'}${fmtSec(Math.abs(delta))}`
-                      : '—'}
-                  </span>
-                </div>
-              )}
-              {datedEntries.length >= 2 && (
-                <div className="prog-stat">
-                  <span className="prog-stat-label">Period</span>
-                  <span className="prog-stat-value prog-stat-value--sm">
-                    {fmtDateMonth(datedEntries[0].date)} – {fmtDateMonth(datedEntries[datedEntries.length - 1].date)}
-                  </span>
+            {/* ── Right column: specialty + stat chips ── */}
+            <div className="prog-right-col">
+              <SpecialtyChart times={dashTimes} course={course} />
+              {entries.length >= 1 && (
+                <div className="prog-stats">
+                  <div className="prog-stat">
+                    <span className="prog-stat-label">Swims logged</span>
+                    <span className="prog-stat-value">{entries.length}</span>
+                  </div>
+                  <div className="prog-stat">
+                    <span className="prog-stat-label">Best time</span>
+                    <span className="prog-stat-value prog-stat-value--blue">{fastest?.time ?? '—'}</span>
+                  </div>
+                  {datedEntries.length >= 2 && (
+                    <div className="prog-stat">
+                      <span className="prog-stat-label">Overall change</span>
+                      <span className={`prog-stat-value${delta !== null && delta < 0 ? ' prog-stat-value--green' : delta !== null && delta > 0 ? ' prog-stat-value--red' : ''}`}>
+                        {delta !== null
+                          ? `${delta < 0 ? '−' : '+'}${fmtSec(Math.abs(delta))}`
+                          : '—'}
+                      </span>
+                    </div>
+                  )}
+                  {datedEntries.length >= 2 && (
+                    <div className="prog-stat">
+                      <span className="prog-stat-label">Period</span>
+                      <span className="prog-stat-value prog-stat-value--sm">
+                        {fmtDateMonth(datedEntries[0].date)} – {fmtDateMonth(datedEntries[datedEntries.length - 1].date)}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
+          </div>{/* end prog-top-row */}
 
           {/* ── Unknown-date warning ── */}
           {unknownEntries.length > 0 && (

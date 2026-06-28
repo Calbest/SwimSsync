@@ -10,6 +10,21 @@ import './Profile.css'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+const TOP_EVENT_LABELS: Record<string, string> = {
+  'SCY-50-free':'SCY 50 Free','SCY-100-free':'SCY 100 Free','SCY-200-free':'SCY 200 Free',
+  'SCY-500-free':'SCY 500 Free','SCY-1000-free':'SCY 1000 Free','SCY-1650-free':'SCY 1650 Free',
+  'SCY-100-back':'SCY 100 Back','SCY-200-back':'SCY 200 Back',
+  'SCY-100-breast':'SCY 100 Breast','SCY-200-breast':'SCY 200 Breast',
+  'SCY-100-fly':'SCY 100 Fly','SCY-200-fly':'SCY 200 Fly',
+  'SCY-200-im':'SCY 200 IM','SCY-400-im':'SCY 400 IM',
+  'LCM-50-free':'LCM 50 Free','LCM-100-free':'LCM 100 Free','LCM-200-free':'LCM 200 Free',
+  'LCM-400-free':'LCM 400 Free','LCM-800-free':'LCM 800 Free','LCM-1500-free':'LCM 1500 Free',
+  'LCM-100-back':'LCM 100 Back','LCM-200-back':'LCM 200 Back',
+  'LCM-100-breast':'LCM 100 Breast','LCM-200-breast':'LCM 200 Breast',
+  'LCM-100-fly':'LCM 100 Fly','LCM-200-fly':'LCM 200 Fly',
+  'LCM-200-im':'LCM 200 IM','LCM-400-im':'LCM 400 IM',
+}
+
 const SCY_ORDER = [
   'SCY-50-free','SCY-100-free','SCY-200-free','SCY-500-free','SCY-1000-free','SCY-1650-free',
   'SCY-100-back','SCY-200-back','SCY-100-breast','SCY-200-breast',
@@ -131,6 +146,8 @@ export default function PublicProfile() {
   const [profile,       setProfile]       = useState<ProfileType | null>(null)
   const [loading,       setLoading]       = useState(true)
   const [notFound,      setNotFound]      = useState(false)
+  const [isPrivate,     setIsPrivate]     = useState(false)
+  const [isBlocked,     setIsBlocked]     = useState(false)
   const [myId,          setMyId]          = useState<string | null>(null)
   const [isFollowing,   setIsFollowing]   = useState(false)
   const [followPending, setFollowPending] = useState(false)
@@ -150,12 +167,29 @@ export default function PublicProfile() {
 
       setMyId(user?.id ?? null)
       if (!profileRes.data) { setNotFound(true); setLoading(false); return }
-      setProfile(profileRes.data as ProfileType)
+      const prof = profileRes.data as ProfileType & { is_private?: boolean }
+      setProfile(prof)
       setCounts(countsRes)
 
       if (user && user.id !== userId) {
         const following = await checkIsFollowing(userId!)
         setIsFollowing(following)
+
+        // Check if viewer is blocked by profile owner
+        try {
+          const { data: block } = await supabase
+            .from('blocks')
+            .select('id')
+            .eq('blocker_id', userId!)
+            .eq('blocked_id', user.id)
+            .maybeSingle()
+          if (block) { setIsBlocked(true); setLoading(false); return }
+        } catch { /* blocks table may not exist yet */ }
+
+        // Check private account
+        if (prof.is_private && !following) {
+          setIsPrivate(true)
+        }
       }
       setLoading(false)
     }
@@ -202,6 +236,36 @@ export default function PublicProfile() {
           <span className="pub-404-icon">🏊</span>
           <h2>Swimmer not found</h2>
           <p>This profile doesn't exist or may have been removed.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isBlocked) {
+    return (
+      <div className="pub-page pub-page--404">
+        <button className="pub-back" onClick={() => navigate(-1)}>
+          <ChevronLeft size={18} /> Back
+        </button>
+        <div className="pub-404-body">
+          <span className="pub-404-icon">🔒</span>
+          <h2>Profile unavailable</h2>
+          <p>You can't view this profile.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isPrivate) {
+    return (
+      <div className="pub-page pub-page--404">
+        <button className="pub-back" onClick={() => navigate(-1)}>
+          <ChevronLeft size={18} /> Back
+        </button>
+        <div className="pub-404-body">
+          <span className="pub-404-icon">🔒</span>
+          <h2>This account is private</h2>
+          <p>Follow this swimmer to see their profile and times.</p>
         </div>
       </div>
     )
@@ -295,6 +359,24 @@ export default function PublicProfile() {
           </button>
         )}
       </div>
+
+      {/* ── Top Events ── */}
+      {(profile.top_events ?? []).filter(Boolean).length > 0 && (
+        <div className="pub-section">
+          <h2 className="pub-section-title">Top Events</h2>
+          <div className="pub-top-events">
+            {(profile.top_events ?? []).filter(Boolean).map((key, i) => (
+              <div key={key} className="pub-top-event-row">
+                <span className="pub-top-event-rank">#{i + 1}</span>
+                <span className="pub-top-event-label">{TOP_EVENT_LABELS[key] ?? key}</span>
+                {profile.times?.[key] && (
+                  <span className="pub-top-event-time">{profile.times[key]}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Personal bests ── */}
       <div className="pub-section">

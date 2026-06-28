@@ -499,6 +499,12 @@
   margin-bottom: 4px;
 }
 .prog-controls-wrap { flex: 1; min-width: 0; }
+.prog-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex-shrink: 0;
+}
 
 /* ── Specialty card ── */
 .specialty-card {
@@ -565,5 +571,6 @@
   .prog-stat     { padding: 10px 14px; min-width: 90px; }
   .prog-stat-value { font-size: 17px; }
   .prog-top-row  { flex-direction: column; }
+  .prog-right-col { width: 100%; }
   .specialty-card { width: 100%; align-items: center; }
 }

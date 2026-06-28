@@ -557,6 +557,7 @@ export default function Dashboard() {
         dob:          user.user_metadata?.dob         || null,
         banner_type:  user.user_metadata?.bannerType  || null,
         banner_value: user.user_metadata?.bannerValue || null,
+        top_events:   (user.user_metadata?.topEvents as string[] | undefined) ?? [],
       })
     })
   }, [navigate])

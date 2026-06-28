@@ -14,6 +14,7 @@ export interface Profile {
   dob: string | null
   banner_type: string | null
   banner_value: string | null
+  top_events: string[]
 }
 
 export interface FeedNotif {
@@ -158,6 +159,31 @@ export async function writeFollowNotification(
       from_user_id: fromProfile.id,
       data:         { fromAvatar: fromProfile.avatar_url ?? null },
     })
+  } catch { /* notifications table may not exist yet */ }
+}
+
+export async function writeMeetNotification(
+  fromProfile: Pick<Profile, 'id' | 'full_name' | 'username' | 'avatar_url'>,
+  meet: { id: string; name: string; date: string; time?: string },
+): Promise<void> {
+  try {
+    const { data: rows } = await supabase
+      .from('follows')
+      .select('follower_id')
+      .eq('following_id', fromProfile.id)
+      .limit(100)
+    if (!rows?.length) return
+
+    const name = fromProfile.full_name || fromProfile.username
+    const inserts = rows.map(row => ({
+      user_id:      row.follower_id,
+      type:         'meet',
+      title:        `Meet — ${name}`,
+      message:      `${name} is going to ${meet.name} on ${meet.date}${meet.time ? ` at ${meet.time}` : ''}.`,
+      from_user_id: fromProfile.id,
+      data:         { meetName: meet.name, meetDate: meet.date, meetTime: meet.time ?? '' },
+    }))
+    await supabase.from('notifications').insert(inserts)
   } catch { /* notifications table may not exist yet */ }
 }
 

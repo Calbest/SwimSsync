@@ -37,6 +37,14 @@ export default function CreateAccount() {
       setError('Please enter your birthday.')
       return
     }
+    if (!username.trim()) {
+      setError('Please choose a username.')
+      return
+    }
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(username.trim())) {
+      setError('Username must be 3–20 characters: letters, numbers, or underscores only.')
+      return
+    }
     if (password !== confirm) {
       setError('Passwords do not match.')
       return
@@ -47,12 +55,25 @@ export default function CreateAccount() {
     }
 
     setLoading(true)
+
+    // Check username uniqueness
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', username.trim().toLowerCase())
+      .maybeSingle()
+    if (existing) {
+      setError('That username is already taken. Please choose another.')
+      setLoading(false)
+      return
+    }
+
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          username,
+          username: username.trim().toLowerCase(),
           full_name: fullName.trim(),
           gender,
           dob,

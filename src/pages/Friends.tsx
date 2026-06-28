@@ -39,9 +39,8 @@ function relativeTime(iso: string): string {
 }
 
 function notifIcon(type: string) {
-  if (type === 'pb')           return '🏊'
-  if (type === 'new_follower') return '👤'
-  if (type === 'birthday')     return '🎂'
+  if (type === 'pb')   return '🏊'
+  if (type === 'meet') return '📅'
   return '📣'
 }
 
@@ -171,7 +170,7 @@ export default function Friends() {
   // Mark activity as read when that tab is opened
   useEffect(() => {
     if (tab !== 'activity' || activityRead) return
-    const unreadIds = feedNotifs.filter(n => !n.read).map(n => n.id)
+    const unreadIds = activityNotifs.filter(n => !n.read).map(n => n.id)
     if (!unreadIds.length) { setActivityRead(true); return }
     markFeedNotifsRead(unreadIds).then(() => {
       setFeedNotifs(prev => prev.map(n => ({ ...n, read: true })))
@@ -298,7 +297,8 @@ export default function Friends() {
     )
   }
 
-  const unreadActivityCount = feedNotifs.filter(n => !n.read).length
+  const activityNotifs = feedNotifs.filter(n => n.type === 'pb' || n.type === 'meet')
+  const unreadActivityCount = activityNotifs.filter(n => !n.read).length
 
   const listToShow: Profile[] =
     tab === 'followers' ? followers :
@@ -394,18 +394,34 @@ export default function Friends() {
           {loading && (
             <div className="fr-list-empty"><Loader size={24} className="fr-list-spinner" /><p>Loading…</p></div>
           )}
-          {!loading && feedNotifs.length === 0 && (
+          {!loading && activityNotifs.length === 0 && (
             <div className="fr-list-empty">
               <p>No activity yet.</p>
-              <p className="fr-list-hint">Follow swimmers to see their new PRs and updates here.</p>
+              <p className="fr-list-hint">Follow swimmers to see their new PRs and meet plans here.</p>
             </div>
           )}
-          {!loading && feedNotifs.map(n => (
+          {!loading && activityNotifs.map(n => (
             <div
               key={n.id}
               className={`fr-activity-item${n.read ? '' : ' fr-activity-item--unread'}`}
-              onClick={() => n.from_user_id && navigate(`/profile/${n.from_user_id}`)}
-              style={{ cursor: n.from_user_id ? 'pointer' : 'default' }}
+              onClick={() => {
+                if (n.type === 'meet') {
+                  const meetDate = (n.data?.meetDate as string) ?? ''
+                  const today = new Date().toISOString().slice(0, 10)
+                  if (meetDate && meetDate < today) {
+                    alert('This meet has already taken place.')
+                    return
+                  }
+                  const params = new URLSearchParams()
+                  if (n.data?.meetName) params.set('prefill_name', n.data.meetName as string)
+                  if (n.data?.meetDate) params.set('prefill_date', n.data.meetDate as string)
+                  if (n.data?.meetTime) params.set('prefill_time', n.data.meetTime as string)
+                  navigate(`/calendar?${params.toString()}`)
+                } else if (n.from_user_id) {
+                  navigate(`/profile/${n.from_user_id}`)
+                }
+              }}
+              style={{ cursor: 'pointer' }}
             >
               <div className="fr-activity-icon">{notifIcon(n.type)}</div>
               <div className="fr-activity-body">

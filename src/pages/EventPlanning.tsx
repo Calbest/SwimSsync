@@ -235,6 +235,7 @@ export default function EventPlanning() {
   const [pasteText,      setPasteText]      = useState('')
   const [parseError,     setParseError]     = useState('')
   const [selectedIds,    setSelectedIds]    = useState<Set<string>>(new Set())
+  const [topEvents,      setTopEvents]      = useState<string[]>([])
 
   // Analysis controls
   const [recFilter,   setRecFilter]   = useState<RecFilter>('all')
@@ -252,6 +253,7 @@ export default function EventPlanning() {
       setGoals((m.goals ?? []) as GoalEntry[])
       setDob(m.dob ?? '')
       setGender(m.gender ?? '')
+      setTopEvents((m.topEvents as string[] | undefined) ?? [])
     })
   }, [navigate])
 
@@ -541,6 +543,37 @@ export default function EventPlanning() {
                 )}
               </div>
             </div>
+
+            {/* ── Favorite events suggestion ── */}
+            {(() => {
+              const suggested = topEvents
+                .filter(k => k.startsWith(course + '-'))
+                .map(k => k.slice(course.length + 1))
+                .filter(Boolean)
+              if (!suggested.length) return null
+              return (
+                <div className="ep-favorites-row">
+                  <span className="ep-favorites-label">⭐ Your Favorites</span>
+                  {suggested.map(id => {
+                    const label = groups.flatMap(g => g.events).find(e => e.id === id)?.label ?? id
+                    const isOn  = selectedIds.has(id)
+                    return (
+                      <button
+                        key={id}
+                        className={`ep-fav-chip${isOn ? ' on' : ''}`}
+                        onClick={() => setSelectedIds(prev => {
+                          const s = new Set(prev)
+                          isOn ? s.delete(id) : s.add(id)
+                          return s
+                        })}
+                      >
+                        {label}
+                      </button>
+                    )
+                  })}
+                </div>
+              )
+            })()}
 
             {/* ── Event Selection ── */}
             <div className="ep-sel-header">

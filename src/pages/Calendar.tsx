@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { LayoutDashboard, CalendarCheck, ArrowRightLeft, ChevronLeft, ChevronRight, Plus, X, Pencil, Check } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { writeMeetNotification } from '../lib/friends'
 import TimeConverterPopup from '../components/TimeConverterPopup'
 import './Calendar.css'
 
@@ -41,6 +42,7 @@ interface Meet {
   id:               string
   name:             string
   date:             string
+  time:             string
   mood:             number | null
   confidence:       number | null
   weather:          number | null
@@ -209,6 +211,7 @@ function migrateMeets(raw: unknown[]): Meet[] {
     id:               m.id   ?? crypto.randomUUID(),
     name:             m.name ?? '',
     date:             m.date ?? '',
+    time:             m.time ?? '',
     mood:             m.mood             ?? null,
     confidence:       m.confidence       ?? null,
     weather:          m.weather          ?? null,
@@ -657,16 +660,20 @@ function DayModal({ dateStr, initial, schedule, isPrac, onSave, onClose }: {
 
 // ─── Meet Modal ───────────────────────────────────────────────────────────────
 
-function MeetModal({ meet, onSave, onDelete, onClose }: {
-  meet:     Meet | null
-  onSave:   (m: Meet) => void
-  onDelete?: (id: string) => void
-  onClose:  () => void
+function MeetModal({ meet, onSave, onDelete, onClose, defaultName = '', defaultDate = '', defaultTime = '' }: {
+  meet:        Meet | null
+  onSave:      (m: Meet) => void
+  onDelete?:   (id: string) => void
+  onClose:     () => void
+  defaultName?: string
+  defaultDate?: string
+  defaultTime?: string
 }) {
   const isNew = meet === null
 
-  const [name,  setName]  = useState(meet?.name ?? '')
-  const [date,  setDate]  = useState(meet?.date ?? new Date().toISOString().slice(0, 10))
+  const [name,  setName]  = useState(meet?.name ?? defaultName)
+  const [date,  setDate]  = useState(meet?.date ?? (defaultDate || new Date().toISOString().slice(0, 10)))
+  const [time,  setTime]  = useState(meet?.time ?? defaultTime)
   const [mood,  setMood]  = useState<number | null>(meet?.mood ?? null)
   const [conf,  setConf]  = useState<number | null>(meet?.confidence ?? null)
   const [wthr,  setWthr]  = useState<number | null>(meet?.weather ?? null)
@@ -683,7 +690,7 @@ function MeetModal({ meet, onSave, onDelete, onClose }: {
     if (!name.trim()) return
     onSave({
       id: meet?.id ?? crypto.randomUUID(),
-      name: name.trim(), date,
+      name: name.trim(), date, time,
       mood, confidence: conf, weather: wthr,
       injuries: inj, performanceNotes: notes,
     })
@@ -713,6 +720,13 @@ function MeetModal({ meet, onSave, onDelete, onClose }: {
             <input
               className="cal-field-input" type="date"
               value={date} onChange={e => setDate(e.target.value)}
+            />
+          </div>
+          <div className="cal-field">
+            <label className="cal-field-lbl">Start Time <span style={{ fontWeight: 400, color: '#94a3b8' }}>(optional)</span></label>
+            <input
+              className="cal-field-input" type="time"
+              value={time} onChange={e => setTime(e.target.value)}
             />
           </div>
 
@@ -1261,7 +1275,8 @@ function CareerView({ attendance, meets, schedule }: {
 // ─── Main Calendar ────────────────────────────────────────────────────────────
 
 export default function Calendar() {
-  const navigate = useNavigate()
+  const navigate     = useNavigate()
+  const [searchParams] = useSearchParams()
   const today    = new Date()
   const todayStr = iso(today.getFullYear(), today.getMonth(), today.getDate())
 
@@ -1287,6 +1302,10 @@ export default function Calendar() {
     : false
   const [meetModal, setMeetModal] = useState<Meet | null | 'new'>(null)
 
+  const prefillName = searchParams.get('prefill_name') ?? ''
+  const prefillDate = searchParams.get('prefill_date') ?? ''
+  const prefillTime = searchParams.get('prefill_time') ?? ''
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       const user = data.session?.user
@@ -1295,8 +1314,9 @@ export default function Calendar() {
       setMeets(migrateMeets(m.calMeets ?? []))
       setAttn(migrateAttendance(m.calAttendance ?? {}))
       if (m.calSchedule) setSched(migrateSchedule(m.calSchedule))
+      if (prefillName) setMeetModal('new')
     })
-  }, [navigate])
+  }, [navigate]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function persist(patch: object) {
     setSaving(true)
@@ -1304,12 +1324,24 @@ export default function Calendar() {
     setSaving(false)
   }
 
-  function handleMeetSave(m: Meet) {
-    const next = meets.some(x => x.id === m.id)
-      ? meets.map(x => x.id === m.id ? m : x)
-      : [...meets, m]
+  async function handleMeetSave(m: Meet) {
+    const isNew = !meets.some(x => x.id === m.id)
+    const next = isNew ? [...meets, m] : meets.map(x => x.id === m.id ? m : x)
     setMeets(next)
     persist({ calMeets: next })
+    if (isNew) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const meta = user.user_metadata ?? {}
+        const privacy = meta.privacySettings ?? {}
+        if (privacy.shareMeets !== false) {
+          writeMeetNotification(
+            { id: user.id, full_name: meta.full_name || null, username: meta.username || '', avatar_url: meta.avatar_url || null },
+            m,
+          )
+        }
+      }
+    }
   }
 
   function handleMeetDelete(id: string) {
@@ -1407,6 +1439,9 @@ export default function Calendar() {
           onSave={handleMeetSave}
           onDelete={handleMeetDelete}
           onClose={() => setMeetModal(null)}
+          defaultName={meetModal === 'new' ? prefillName : ''}
+          defaultDate={meetModal === 'new' ? prefillDate : ''}
+          defaultTime={meetModal === 'new' ? prefillTime : ''}
         />
       )}
 
