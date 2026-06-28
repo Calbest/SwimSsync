@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, ChevronDown, BookOpen, ArrowRightLeft } from 'lucide-react'
+import { LayoutDashboard, ChevronDown, ArrowRightLeft } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import {
   SCS_STANDARDS, getAgeGroup, getCut,
   type StdLevel,
 } from '../lib/scsStandards'
-import ColorLegend from '../components/ColorLegend'
 import TimeConverterPopup from '../components/TimeConverterPopup'
 import './Compare.css'
 
@@ -171,7 +170,6 @@ function formatTimeDigits(raw: string): string {
 
 export default function Compare() {
   const navigate = useNavigate()
-  const [showLegend,       setShowLegend]       = useState(false)
   const [showTC,           setShowTC]           = useState(false)
   const [course,           setCourse]           = useState<Course>('SCY')
   const [times,            setTimes]            = useState<Record<string, string>>({})
@@ -241,7 +239,6 @@ export default function Compare() {
   return (
     <div className="compare-layout">
 
-      {showLegend && <ColorLegend onClose={() => setShowLegend(false)} />}
       <TimeConverterPopup isOpen={showTC} onClose={() => setShowTC(false)} />
 
       {/* ── Sidebar ── */}
@@ -252,15 +249,31 @@ export default function Compare() {
             <LayoutDashboard size={16} />
             <span>Dashboard</span>
           </button>
-          <button className="compare-nav-btn" onClick={() => setShowLegend(true)}>
-            <BookOpen size={16} />
-            <span>Color Legend</span>
-          </button>
           <button className="compare-nav-btn" onClick={() => setShowTC(true)}>
             <ArrowRightLeft size={16} />
             <span>Time Converter</span>
           </button>
         </nav>
+
+        {/* ── Inline color scale ── */}
+        <div className="compare-sidebar-scale">
+          <p className="compare-sidebar-scale-title">Color Scale</p>
+          {([
+            { sym: '✓',  bg: '#1d4ed8', border: '#1e3a8a', label: 'Meets standard' },
+            { sym: '≈',  bg: '#0891b2', border: '#0e7490', label: 'Within 3%' },
+            { sym: '!',  bg: '#d97706', border: '#92400e', label: 'Within 7%' },
+            { sym: '!!', bg: '#ea580c', border: '#9a3412', label: 'Within 15%' },
+            { sym: '✗',  bg: '#b91c1c', border: '#7f1d1d', label: 'Over 15%' },
+          ] as const).map(({ sym, bg, border, label }) => (
+            <div key={sym} className="compare-sidebar-scale-row">
+              <span
+                className="compare-sidebar-scale-swatch"
+                style={{ background: bg, boxShadow: `0 0 0 1.5px ${border}` }}
+              >{sym}</span>
+              <span className="compare-sidebar-scale-label">{label}</span>
+            </div>
+          ))}
+        </div>
       </aside>
 
       {/* ── Main ── */}
