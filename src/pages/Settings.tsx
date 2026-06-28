@@ -313,7 +313,9 @@ export default function Settings() {
       dob:          m.dob        || null,
       banner_type:  type,
       banner_value: value,
-      top_events:   (m.topEvents as string[] | undefined) ?? [],
+      top_events:            (m.topEvents as string[] | undefined) ?? [],
+      latest_monthly_report: (m.latestMonthlyReport as import('../lib/friends').MonthlyReport | undefined) ?? null,
+      share_monthly_report:  (m.privacySettings as Record<string,boolean> | undefined)?.shareMonthlyReport ?? true,
     })
   }
 

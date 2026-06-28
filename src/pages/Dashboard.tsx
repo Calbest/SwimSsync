@@ -659,7 +659,9 @@ export default function Dashboard() {
         dob:          user.user_metadata?.dob         || null,
         banner_type:  user.user_metadata?.bannerType  || null,
         banner_value: user.user_metadata?.bannerValue || null,
-        top_events:   (user.user_metadata?.topEvents as string[] | undefined) ?? [],
+        top_events:            (user.user_metadata?.topEvents as string[] | undefined) ?? [],
+        latest_monthly_report: (user.user_metadata?.latestMonthlyReport as import('../lib/friends').MonthlyReport | undefined) ?? null,
+        share_monthly_report:  (user.user_metadata?.privacySettings as Record<string,boolean> | undefined)?.shareMonthlyReport ?? true,
       })
       // Monthly report check (runs async in background, no UI block)
       maybeGenerateMonthlyReport({ id: user.id, user_metadata: user.user_metadata ?? {} })
