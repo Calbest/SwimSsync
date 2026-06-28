@@ -305,7 +305,24 @@ export default function Qualifications() {
                               return <span key={m.key} className="quals-cell quals-cell--no-time">{cut}</span>
                             }
                             const pClass = getProximityClass(uSec, cSec)
-                            return <span key={m.key} className={`quals-cell quals-cell--${pClass}`}>{cut}</span>
+                            const showGoal = ['close','near','far'].includes(pClass)
+                            return (
+                              <div key={m.key} className={`quals-cell quals-cell--${pClass}`}>
+                                {cut}
+                                {showGoal && (
+                                  <button
+                                    className="quals-goal-btn"
+                                    title="Create a goal to hit this cut"
+                                    onClick={() => {
+                                      const params = new URLSearchParams({ course, event: id, cut, stroke })
+                                      navigate(`/goals/create?${params.toString()}`)
+                                    }}
+                                  >
+                                    + Goal
+                                  </button>
+                                )}
+                              </div>
+                            )
                           })}
                         </div>
                       )
