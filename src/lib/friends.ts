@@ -199,7 +199,18 @@ export async function getFollowing(userId: string): Promise<{ data: Profile[]; e
   if (error || !rows?.length) return { data: [], error }
   const ids = rows.map((r: { following_id: string }) => r.following_id)
   const res = await supabase.from('profiles').select('*').in('id', ids)
-  return { data: (res.data ?? []) as Profile[], error: res.error }
+  const profiles = (res.data ?? []) as Profile[]
+  const profileIds = new Set(profiles.map(p => p.id))
+  const placeholders: Profile[] = ids
+    .filter(id => !profileIds.has(id))
+    .map(id => ({
+      id, username: id.slice(0, 8), full_name: 'Swimmer', avatar_url: null,
+      gender: null, club_team: null, high_school: null, times: {}, time_meta: {},
+      updated_at: '', dob: null, banner_type: null, banner_value: null,
+      top_events: [], latest_monthly_report: null, share_monthly_report: false,
+      phone: null, show_phone: false, is_private: false,
+    }))
+  return { data: [...profiles, ...placeholders], error: res.error }
 }
 
 export async function getFollowCounts(userId: string) {
